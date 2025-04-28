@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { products } from "@/lib/data"
+import { ProfileShortcut } from "@/components/profile-shortcut"
 import {
   ArrowLeft,
   ArrowRight,
@@ -651,6 +652,8 @@ export default function ProductPage() {
           </div>
         </motion.div>
       )}
+      {/* Profile Shortcut */}
+      <ProfileShortcut />
     </div>
   )
 }

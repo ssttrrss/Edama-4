@@ -180,11 +180,12 @@ export default function Header() {
             {isLoggedIn ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <Avatar className="h-8 w-8">
+                  <Button variant="ghost" size="icon" className="rounded-full relative" aria-label={t("myProfile")}>
+                    <Avatar className="h-8 w-8 border-2 border-primary/20 hover:border-primary transition-colors">
                       <AvatarImage src="/placeholder.svg?height=32&width=32" />
                       <AvatarFallback>U</AvatarFallback>
                     </Avatar>
+                    <span className="sr-only">{t("myProfile")}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align={dir === "rtl" ? "start" : "end"} className="w-56">
@@ -194,19 +195,19 @@ export default function Header() {
                       <span>{t("myProfile")}</span>
                     </DropdownMenuItem>
                   </Link>
-                  <Link href="/orders">
+                  <Link href="/profile?tab=orders">
                     <DropdownMenuItem>
                       <Package className="mr-2 h-4 w-4" />
                       <span>{t("myOrders")}</span>
                     </DropdownMenuItem>
                   </Link>
-                  <Link href="/favorites">
+                  <Link href="/profile?tab=favorites">
                     <DropdownMenuItem>
                       <Heart className="mr-2 h-4 w-4" />
                       <span>{t("favorites")}</span>
                     </DropdownMenuItem>
                   </Link>
-                  <Link href="/settings">
+                  <Link href="/profile?tab=settings">
                     <DropdownMenuItem>
                       <Settings className="mr-2 h-4 w-4" />
                       <span>{t("settings")}</span>
@@ -244,6 +245,16 @@ export default function Header() {
                     <Link href="/home" className="flex items-center py-2" onClick={() => document.body.click()}>
                       {t("home")}
                     </Link>
+                    {isLoggedIn && (
+                      <Link
+                        href="/profile"
+                        className="flex items-center gap-2 py-2"
+                        onClick={() => document.body.click()}
+                      >
+                        <User className="h-4 w-4" />
+                        {t("myProfile")}
+                      </Link>
+                    )}
                     <Link href="/about" className="flex items-center py-2" onClick={() => document.body.click()}>
                       {t("about")}
                     </Link>

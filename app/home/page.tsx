@@ -18,6 +18,7 @@ import { EcoImpactCalculator } from "@/components/eco-impact-calculator"
 import { products, categories } from "@/lib/data"
 import { Search, Filter, ChevronLeft, ChevronRight, ShoppingCart, Heart, Clock } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { ProfileShortcut } from "@/components/profile-shortcut"
 
 export default function HomePage() {
   const { t, language, dir } = useTranslation()
@@ -637,6 +638,8 @@ export default function HomePage() {
           </motion.div>
         </div>
       </div>
+      {/* Profile Shortcut */}
+      <ProfileShortcut />
     </div>
   )
 }

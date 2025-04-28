@@ -150,9 +150,11 @@ export default function CartPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <Button className="w-full" disabled={items.length === 0}>
-                {t("checkout")}
-              </Button>
+              <Link href="/checkout" className="w-full">
+                <Button className="w-full" disabled={items.length === 0}>
+                  {t("checkout")}
+                </Button>
+              </Link>
               <Link href="/home" className="w-full">
                 <Button variant="outline" className="w-full gap-2">
                   <BackArrow className="h-4 w-4" />

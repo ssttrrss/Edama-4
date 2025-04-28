@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { useTranslation } from "@/components/language-provider"
@@ -148,7 +148,7 @@ export default function ProfilePage() {
   const [userData, setUserData] = useState<any>(null)
   const [orders, setOrders] = useState<any[]>([])
   const [favorites, setFavorites] = useState<any[]>([])
-  const [reviews, setReviews] = useState(sampleReviews)
+  const [reviews] = useState(sampleReviews)
   const [uploadedProducts, setUploadedProducts] = useState(sampleUploadedProducts)
   const [editedUser, setEditedUser] = useState<any>({})
   const [previewImage, setPreviewImage] = useState<string | null>(null)
@@ -167,71 +167,93 @@ export default function ProfilePage() {
     quantity: 1,
   })
   const [productImage, setProductImage] = useState<string | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
 
-  // Check if user is logged in
+  // Format date - moved outside useEffect to avoid recreation on each render
+  const formatDate = useCallback(
+    (dateString: string) => {
+      const date = new Date(dateString)
+      return new Intl.DateTimeFormat(language === "ar" ? "ar-EG" : "en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }).format(date)
+    },
+    [language],
+  )
+
+  // Check if user is logged in - Fixed dependency array and initialization logic
   useEffect(() => {
-    const user = localStorage.getItem("edama-user")
-    if (!user) {
-      router.push("/login")
-      return
-    }
+    // Prevent multiple initializations
+    if (isInitialized) return
 
-    // Get tab from URL if present
-    const tab = searchParams.get("tab")
-    if (tab) {
-      setActiveTab(tab)
-    }
+    const initializeUserData = async () => {
+      const user = localStorage.getItem("edama-user")
+      if (!user) {
+        router.push("/login")
+        return
+      }
 
-    // Load user data
-    try {
-      const parsedUser = JSON.parse(user)
-      setUserData({
-        name: parsedUser.name || "User Name",
-        email: parsedUser.email || "user@example.com",
-        phone: parsedUser.phone || "+20 123 456 7890",
-        address: parsedUser.address || "Cairo, Egypt",
-        joinDate: parsedUser.joinDate || new Date().toISOString(),
-        avatar: parsedUser.avatar || "/placeholder.svg?height=100&width=100",
-        bio: parsedUser.bio || "Eco-conscious shopper passionate about reducing food waste.",
-        accountType: parsedUser.accountType || "consumer",
-      })
-      setEditedUser({
-        name: parsedUser.name || "User Name",
-        email: parsedUser.email || "user@example.com",
-        phone: parsedUser.phone || "+20 123 456 7890",
-        address: parsedUser.address || "Cairo, Egypt",
-        bio: parsedUser.bio || "Eco-conscious shopper passionate about reducing food waste.",
-      })
-      setAccountType(parsedUser.accountType || "consumer")
-    } catch (error) {
-      console.error("Failed to parse user data", error)
-      router.push("/login")
-    }
+      // Get tab from URL if present
+      const tab = searchParams.get("tab")
+      if (tab) {
+        setActiveTab(tab)
+      }
 
-    // Load orders
-    const savedOrders = localStorage.getItem("edama-orders")
-    if (savedOrders) {
       try {
-        const parsedOrders = JSON.parse(savedOrders)
-        setOrders(parsedOrders)
+        // Load user data
+        const parsedUser = JSON.parse(user)
+        const userData = {
+          name: parsedUser.name || "User Name",
+          email: parsedUser.email || "user@example.com",
+          phone: parsedUser.phone || "+20 123 456 7890",
+          address: parsedUser.address || "Cairo, Egypt",
+          joinDate: parsedUser.joinDate || new Date().toISOString(),
+          avatar: parsedUser.avatar || "/placeholder.svg?height=100&width=100",
+          bio: parsedUser.bio || "Eco-conscious shopper passionate about reducing food waste.",
+          accountType: parsedUser.accountType || "consumer",
+        }
+
+        setUserData(userData)
+        setEditedUser({
+          name: userData.name,
+          email: userData.email,
+          phone: userData.phone,
+          address: userData.address,
+          bio: userData.bio,
+        })
+        setAccountType(parsedUser.accountType || "consumer")
+
+        // Load orders
+        const savedOrders = localStorage.getItem("edama-orders")
+        if (savedOrders) {
+          try {
+            setOrders(JSON.parse(savedOrders))
+          } catch (error) {
+            console.error("Failed to parse orders", error)
+          }
+        }
+
+        // Load favorites
+        const savedFavorites = localStorage.getItem("edama-favorites")
+        if (savedFavorites) {
+          try {
+            setFavorites(JSON.parse(savedFavorites))
+          } catch (error) {
+            console.error("Failed to parse favorites", error)
+          }
+        }
+
+        setIsLoading(false)
+        setIsInitialized(true)
       } catch (error) {
-        console.error("Failed to parse orders", error)
+        console.error("Failed to parse user data", error)
+        router.push("/login")
       }
     }
 
-    // Load favorites
-    const savedFavorites = localStorage.getItem("edama-favorites")
-    if (savedFavorites) {
-      try {
-        const parsedFavorites = JSON.parse(savedFavorites)
-        setFavorites(parsedFavorites)
-      } catch (error) {
-        console.error("Failed to parse favorites", error)
-      }
-    }
-
-    setIsLoading(false)
-  }, [router, searchParams])
+    initializeUserData()
+  }, [router, searchParams, isInitialized]) // Removed dependencies that change on every render
 
   // Handle logout
   const handleLogout = () => {
@@ -316,8 +338,8 @@ export default function ProfilePage() {
       ...newProduct,
       discount,
       image: productImage || "/placeholder.svg?height=300&width=300",
-      supermarket: userData.name,
-      supermarketAr: userData.name,
+      supermarket: userData?.name || "Your Store",
+      supermarketAr: userData?.name || "متجرك",
       status: "active",
     }
 
@@ -353,16 +375,6 @@ export default function ProfilePage() {
       title: t("productDeleted"),
       description: t("productDeletedDescription"),
     })
-  }
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return new Intl.DateTimeFormat(language === "ar" ? "ar-EG" : "en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }).format(date)
   }
 
   // Get order status badge
@@ -489,7 +501,7 @@ export default function ProfilePage() {
                   </p>
                 </div>
 
-                <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="grid w-full grid-cols-1 gap-2">
                     <TabsTrigger value="overview" className="justify-start">
                       <User className="mr-2 h-4 w-4" />
@@ -540,7 +552,7 @@ export default function ProfilePage() {
           transition={{ duration: 0.5 }}
           className="md:col-span-3"
         >
-          <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+          <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
             <TabsContent value="overview" className="mt-0">
               <Card>
                 <CardHeader>
@@ -1336,18 +1348,14 @@ export default function ProfilePage() {
                           <h4 className="font-medium">{t("emailNotifications")}</h4>
                           <p className="text-sm text-muted-foreground">{t("emailNotificationsDescription")}</p>
                         </div>
-                        <div className="flex h-6 w-11 cursor-pointer items-center rounded-full bg-primary px-1">
-                          <div className="h-4 w-4 rounded-full bg-white transition-transform"></div>
-                        </div>
+                        <Switch defaultChecked />
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="font-medium">{t("smsNotifications")}</h4>
                           <p className="text-sm text-muted-foreground">{t("smsNotificationsDescription")}</p>
                         </div>
-                        <div className="flex h-6 w-11 cursor-pointer items-center rounded-full bg-muted px-1">
-                          <div className="h-4 w-4 translate-x-5 rounded-full bg-muted-foreground transition-transform"></div>
-                        </div>
+                        <Switch />
                       </div>
                     </div>
                   </div>
