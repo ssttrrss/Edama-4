@@ -4,10 +4,24 @@ import Link from "next/link"
 import Image from "next/image"
 import { useTranslation } from "@/components/language-provider"
 import { Facebook, Twitter, Instagram, Mail, Phone, MapPin } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useState } from "react"
 
 export default function Footer() {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
   const currentYear = new Date().getFullYear()
+  const [showContactOptions, setShowContactOptions] = useState(false)
+
+  // Handle contact options
+  const handleSendSMS = () => {
+    window.location.href = "sms:01274311482"
+    setShowContactOptions(false)
+  }
+
+  const handleSendEmail = () => {
+    window.location.href = "mailto:edama.team@gmail.com"
+    setShowContactOptions(false)
+  }
 
   return (
     <footer className="border-t bg-background">
@@ -45,9 +59,36 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-sm text-muted-foreground hover:text-primary">
-                  {t("contact")}
-                </Link>
+                <div className="relative">
+                  <Button
+                    variant="link"
+                    className="h-auto p-0 text-sm text-muted-foreground hover:text-primary"
+                    onClick={() => setShowContactOptions(!showContactOptions)}
+                  >
+                    {t("contact")}
+                  </Button>
+
+                  {showContactOptions && (
+                    <div className="absolute left-0 mt-2 w-48 rounded-md bg-background shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <div className="py-1">
+                        <button
+                          onClick={handleSendSMS}
+                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
+                        >
+                          <Phone className="h-4 w-4" />
+                          {t("sendSMS")}
+                        </button>
+                        <button
+                          onClick={handleSendEmail}
+                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
+                        >
+                          <Mail className="h-4 w-4" />
+                          {t("sendEmail")}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </li>
             </ul>
           </div>
@@ -75,11 +116,15 @@ export default function Footer() {
             <ul className="space-y-2">
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Phone className="h-4 w-4" />
-                <span>+20 123 456 7890</span>
+                <a href="tel:01274311482" className="hover:text-primary">
+                  01274311482
+                </a>
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                <span>info@edama.eg</span>
+                <a href="mailto:edama.team@gmail.com" className="hover:text-primary">
+                  edama.team@gmail.com
+                </a>
               </li>
               <li className="flex items-center gap-2 text-sm text-muted-foreground">
                 <MapPin className="h-4 w-4" />

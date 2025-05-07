@@ -12,7 +12,20 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Menu, Search, ShoppingCart, Sun, Moon, User, LogOut, Heart, Package, Settings } from "lucide-react"
+import {
+  Menu,
+  Search,
+  ShoppingCart,
+  Sun,
+  Moon,
+  User,
+  LogOut,
+  Heart,
+  Package,
+  Settings,
+  Phone,
+  Mail,
+} from "lucide-react"
 import { useMobile } from "@/hooks/use-mobile"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -24,6 +37,7 @@ export default function Header() {
   const isMobile = useMobile()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [showContactOptions, setShowContactOptions] = useState(false)
 
   // Check if user is logged in
   useEffect(() => {
@@ -57,6 +71,17 @@ export default function Header() {
     window.location.href = "/"
   }
 
+  // Handle contact options
+  const handleSendSMS = () => {
+    window.location.href = "sms:01274311482"
+    setShowContactOptions(false)
+  }
+
+  const handleSendEmail = () => {
+    window.location.href = "mailto:edama.team@gmail.com"
+    setShowContactOptions(false)
+  }
+
   return (
     <header
       className={`sticky top-0 z-50 w-full transition-all duration-300 ${
@@ -65,20 +90,119 @@ export default function Header() {
     >
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="relative h-10 w-10 overflow-hidden rounded-full">
-              <Image
-                src="/placeholder.svg?height=40&width=40"
-                alt="Edama Logo"
-                width={40}
-                height={40}
-                className="object-cover"
-                priority
-              />
-            </div>
-            <span className="text-xl font-bold text-primary">Edama</span>
-          </Link>
+          {/* Logo and Burger Menu */}
+          <div className="flex items-center gap-2">
+            {/* Burger Menu */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-muted-foreground">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">{t("menu")}</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side={dir === "rtl" ? "right" : "left"}>
+                <div className="flex flex-col gap-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <div className="relative h-10 w-10 overflow-hidden rounded-full">
+                      <Image
+                        src="/placeholder.svg?height=40&width=40"
+                        alt="Edama Logo"
+                        width={40}
+                        height={40}
+                        className="object-cover"
+                      />
+                    </div>
+                    <span className="text-xl font-bold text-primary">Edama</span>
+                  </div>
+
+                  <nav className="flex flex-col gap-1">
+                    <Link
+                      href="/home"
+                      className={`flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted ${
+                        pathname === "/home" ? "bg-muted font-medium" : ""
+                      }`}
+                    >
+                      {t("home")}
+                    </Link>
+                    <Link
+                      href="/about"
+                      className={`flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted ${
+                        pathname === "/about" ? "bg-muted font-medium" : ""
+                      }`}
+                    >
+                      {t("about")}
+                    </Link>
+                    <Link
+                      href="/profile"
+                      className={`flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted ${
+                        pathname === "/profile" ? "bg-muted font-medium" : ""
+                      }`}
+                    >
+                      <User className="h-4 w-4" />
+                      {t("myProfile")}
+                    </Link>
+                    <Link
+                      href="/cart"
+                      className={`flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted ${
+                        pathname === "/cart" ? "bg-muted font-medium" : ""
+                      }`}
+                    >
+                      <ShoppingCart className="h-4 w-4" />
+                      {t("cart")}
+                    </Link>
+                    <Link
+                      href="/profile?tab=favorites"
+                      className={`flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted ${
+                        pathname === "/profile" && pathname.includes("favorites") ? "bg-muted font-medium" : ""
+                      }`}
+                    >
+                      <Heart className="h-4 w-4" />
+                      {t("favorites")}
+                    </Link>
+                    <Link
+                      href="/profile?tab=orders"
+                      className={`flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted ${
+                        pathname === "/profile" && pathname.includes("orders") ? "bg-muted font-medium" : ""
+                      }`}
+                    >
+                      <Package className="h-4 w-4" />
+                      {t("myOrders")}
+                    </Link>
+                  </nav>
+
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center gap-2 px-3 py-1 text-sm text-muted-foreground">
+                      <Phone className="h-4 w-4" />
+                      <a href="tel:01274311482" className="hover:text-primary">
+                        01274311482
+                      </a>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1 text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4" />
+                      <a href="mailto:edama.team@gmail.com" className="hover:text-primary">
+                        edama.team@gmail.com
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2">
+              <div className="relative h-10 w-10 overflow-hidden rounded-full">
+                <Image
+                  src="/placeholder.svg?height=40&width=40"
+                  alt="Edama Logo"
+                  width={40}
+                  height={40}
+                  className="object-cover"
+                  priority
+                />
+              </div>
+              <span className="text-xl font-bold text-primary">Edama</span>
+            </Link>
+          </div>
 
           {/* Desktop Navigation */}
           {!isMobile && (
@@ -105,14 +229,38 @@ export default function Header() {
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/contact"
-                    className={`px-3 py-2 text-sm font-medium transition-colors hover:text-primary ${
-                      pathname === "/contact" ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  >
-                    {t("contact")}
-                  </Link>
+                  <div className="relative">
+                    <Button
+                      variant="ghost"
+                      className={`px-3 py-2 text-sm font-medium transition-colors hover:text-primary ${
+                        showContactOptions ? "text-primary" : "text-muted-foreground"
+                      }`}
+                      onClick={() => setShowContactOptions(!showContactOptions)}
+                    >
+                      {t("contact")}
+                    </Button>
+
+                    {showContactOptions && (
+                      <div className="absolute right-0 mt-2 w-48 rounded-md bg-background shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                        <div className="py-1">
+                          <button
+                            onClick={handleSendSMS}
+                            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
+                          >
+                            <Phone className="h-4 w-4" />
+                            {t("sendSMS")}
+                          </button>
+                          <button
+                            onClick={handleSendEmail}
+                            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
+                          >
+                            <Mail className="h-4 w-4" />
+                            {t("sendEmail")}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </li>
               </ul>
             </nav>
@@ -232,38 +380,39 @@ export default function Header() {
               </div>
             )}
 
-            {/* Mobile menu */}
+            {/* Mobile contact button */}
             {isMobile && (
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="ml-2 text-muted-foreground">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side={dir === "rtl" ? "right" : "left"}>
-                  <nav className="flex flex-col gap-4">
-                    <Link href="/home" className="flex items-center py-2" onClick={() => document.body.click()}>
-                      {t("home")}
-                    </Link>
-                    {isLoggedIn && (
-                      <Link
-                        href="/profile"
-                        className="flex items-center gap-2 py-2"
-                        onClick={() => document.body.click()}
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-muted-foreground"
+                  onClick={() => setShowContactOptions(!showContactOptions)}
+                >
+                  <Phone className="h-5 w-5" />
+                </Button>
+
+                {showContactOptions && (
+                  <div className="absolute right-0 mt-2 w-48 rounded-md bg-background shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <div className="py-1">
+                      <button
+                        onClick={handleSendSMS}
+                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
                       >
-                        <User className="h-4 w-4" />
-                        {t("myProfile")}
-                      </Link>
-                    )}
-                    <Link href="/about" className="flex items-center py-2" onClick={() => document.body.click()}>
-                      {t("about")}
-                    </Link>
-                    <Link href="/contact" className="flex items-center py-2" onClick={() => document.body.click()}>
-                      {t("contact")}
-                    </Link>
-                  </nav>
-                </SheetContent>
-              </Sheet>
+                        <Phone className="h-4 w-4" />
+                        {t("sendSMS")}
+                      </button>
+                      <button
+                        onClick={handleSendEmail}
+                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-muted"
+                      >
+                        <Mail className="h-4 w-4" />
+                        {t("sendEmail")}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

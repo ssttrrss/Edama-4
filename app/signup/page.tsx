@@ -23,6 +23,7 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [accountType, setAccountType] = useState("buyer")
 
   const BackArrow = language === "ar" ? ArrowRight : ArrowLeft
 
@@ -39,7 +40,7 @@ export default function SignupPage() {
     // Simulate API call
     setTimeout(() => {
       // Store user in localStorage (in a real app, this would be a JWT token)
-      localStorage.setItem("edama-user", JSON.stringify({ name, email }))
+      localStorage.setItem("edama-user", JSON.stringify({ name, email, accountType }))
       setIsLoading(false)
       router.push("/home")
     }, 1500)
@@ -183,6 +184,42 @@ export default function SignupPage() {
                     </span>
                   </div>
                 )}
+              </div>
+              <div className="space-y-2">
+                <Label>{t("accountType")}</Label>
+                <div className="flex gap-4">
+                  <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                    <input
+                      type="radio"
+                      id="buyer"
+                      name="accountType"
+                      value="buyer"
+                      checked={accountType === "buyer"}
+                      onChange={() => setAccountType("buyer")}
+                      className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <Label htmlFor="buyer" className="font-normal">
+                      {t("buyer")}
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                    <input
+                      type="radio"
+                      id="seller"
+                      name="accountType"
+                      value="seller"
+                      checked={accountType === "seller"}
+                      onChange={() => setAccountType("seller")}
+                      className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <Label htmlFor="seller" className="font-normal">
+                      {t("seller")}
+                    </Label>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {accountType === "seller" ? t("sellerAccountDescription") : t("buyerAccountDescription")}
+                </p>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col">

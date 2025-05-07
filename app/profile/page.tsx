@@ -341,6 +341,9 @@ export default function ProfilePage() {
       supermarket: userData?.name || "Your Store",
       supermarketAr: userData?.name || "متجرك",
       status: "active",
+      shopAddress: newProduct.shopAddress || userData?.address,
+      contactPhone: newProduct.contactPhone || userData?.phone,
+      contactWhatsapp: newProduct.contactWhatsapp,
     }
 
     setUploadedProducts([product, ...uploadedProducts])
@@ -349,7 +352,7 @@ export default function ProfilePage() {
     setNewProduct({
       name: "",
       nameAr: "",
-      category: "fruits",
+      category: "canned",
       description: "",
       descriptionAr: "",
       originalPrice: 0,
@@ -357,6 +360,9 @@ export default function ProfilePage() {
       discount: 0,
       expiryDate: "",
       quantity: 1,
+      shopAddress: "",
+      contactPhone: "",
+      contactWhatsapp: "",
     })
     setProductImage(null)
 
@@ -462,11 +468,13 @@ export default function ProfilePage() {
           transition={{ duration: 0.5 }}
           className="md:col-span-1"
         >
-          <Card>
-            <CardContent className="p-6">
+          {/* Update the profile card with a more modern design */}
+          <Card className="overflow-hidden">
+            <div className="relative h-32 w-full bg-gradient-to-r from-primary/20 to-primary/40"></div>
+            <CardContent className="relative -mt-16 p-6">
               <div className="flex flex-col items-center text-center">
                 <div className="relative mb-4">
-                  <Avatar className="h-24 w-24">
+                  <Avatar className="h-24 w-24 border-4 border-background">
                     <AvatarImage src={previewImage || userData.avatar} alt={userData.name} />
                     <AvatarFallback>{userData.name.charAt(0)}</AvatarFallback>
                   </Avatar>
@@ -474,7 +482,7 @@ export default function ProfilePage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-background"
+                      className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-background shadow-md"
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <Camera className="h-4 w-4" />
@@ -490,8 +498,8 @@ export default function ProfilePage() {
                 </div>
                 <h2 className="mb-1 text-xl font-bold">{userData.name}</h2>
                 <p className="mb-2 text-sm text-muted-foreground">{userData.email}</p>
-                <Badge variant={accountType === "supermarket" ? "secondary" : "outline"} className="mb-4">
-                  {accountType === "supermarket" ? t("supermarket") : t("consumer")}
+                <Badge variant={accountType === "seller" ? "secondary" : "outline"} className="mb-4">
+                  {accountType === "seller" ? t("seller") : t("buyer")}
                 </Badge>
 
                 <div className="mb-6 w-full rounded-md bg-primary/10 p-3 text-center text-sm">
@@ -519,7 +527,7 @@ export default function ProfilePage() {
                       <MessageSquare className="mr-2 h-4 w-4" />
                       {t("reviews")}
                     </TabsTrigger>
-                    {accountType === "supermarket" && (
+                    {accountType === "seller" && (
                       <TabsTrigger value="products" className="justify-start">
                         <Store className="mr-2 h-4 w-4" />
                         {t("myProducts")}
@@ -1147,40 +1155,43 @@ export default function ProfilePage() {
                     )}
 
                     {/* Add Product Form */}
-                    <div id="addProductForm" className="mt-8 rounded-lg border p-6">
-                      <h3 className="mb-4 text-lg font-medium">{t("addNewProduct")}</h3>
-                      <div className="space-y-4">
+                    <div id="addProductForm" className="mt-8 rounded-lg border p-6 bg-card shadow-sm">
+                      <h3 className="mb-4 text-xl font-bold">{t("addNewProduct")}</h3>
+                      <div className="space-y-6">
                         <div className="grid gap-4 md:grid-cols-2">
                           <div className="space-y-2">
                             <Label htmlFor="productName">
-                              {t("productName")} ({t("english")})
+                              {t("productName")} ({t("english")}) *
                             </Label>
                             <Input
                               id="productName"
                               value={newProduct.name}
                               onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                              required
                             />
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="productNameAr">
-                              {t("productName")} ({t("arabic")})
+                              {t("productName")} ({t("arabic")}) *
                             </Label>
                             <Input
                               id="productNameAr"
                               value={newProduct.nameAr}
                               onChange={(e) => setNewProduct({ ...newProduct, nameAr: e.target.value })}
+                              required
                             />
                           </div>
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-3">
                           <div className="space-y-2">
-                            <Label htmlFor="category">{t("category")}</Label>
+                            <Label htmlFor="category">{t("category")} *</Label>
                             <select
                               id="category"
                               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               value={newProduct.category}
                               onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                              required
                             >
                               {categories.map((category) => (
                                 <option key={category.id} value={category.id}>
@@ -1190,7 +1201,7 @@ export default function ProfilePage() {
                             </select>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="originalPrice">{t("originalPrice")}</Label>
+                            <Label htmlFor="originalPrice">{t("originalPrice")} *</Label>
                             <Input
                               id="originalPrice"
                               type="number"
@@ -1198,10 +1209,11 @@ export default function ProfilePage() {
                               onChange={(e) =>
                                 setNewProduct({ ...newProduct, originalPrice: Number.parseFloat(e.target.value) })
                               }
+                              required
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="discountedPrice">{t("discountedPrice")}</Label>
+                            <Label htmlFor="discountedPrice">{t("discountedPrice")} *</Label>
                             <Input
                               id="discountedPrice"
                               type="number"
@@ -1209,22 +1221,24 @@ export default function ProfilePage() {
                               onChange={(e) =>
                                 setNewProduct({ ...newProduct, discountedPrice: Number.parseFloat(e.target.value) })
                               }
+                              required
                             />
                           </div>
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-2">
                           <div className="space-y-2">
-                            <Label htmlFor="expiryDate">{t("expiryDate")}</Label>
+                            <Label htmlFor="expiryDate">{t("expiryDate")} *</Label>
                             <Input
                               id="expiryDate"
                               type="date"
                               value={newProduct.expiryDate}
                               onChange={(e) => setNewProduct({ ...newProduct, expiryDate: e.target.value })}
+                              required
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor="quantity">{t("quantity")}</Label>
+                            <Label htmlFor="quantity">{t("quantity")} *</Label>
                             <Input
                               id="quantity"
                               type="number"
@@ -1232,7 +1246,43 @@ export default function ProfilePage() {
                               onChange={(e) =>
                                 setNewProduct({ ...newProduct, quantity: Number.parseInt(e.target.value) })
                               }
+                              required
                             />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="shopAddress">{t("shopAddress")} *</Label>
+                          <Input
+                            id="shopAddress"
+                            value={newProduct.shopAddress || ""}
+                            onChange={(e) => setNewProduct({ ...newProduct, shopAddress: e.target.value })}
+                            placeholder={t("shopAddressPlaceholder")}
+                            required
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="contactMethod">{t("contactMethod")} *</Label>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label htmlFor="contactPhone">{t("phone")}</Label>
+                              <Input
+                                id="contactPhone"
+                                value={newProduct.contactPhone || ""}
+                                onChange={(e) => setNewProduct({ ...newProduct, contactPhone: e.target.value })}
+                                placeholder={t("contactPhonePlaceholder")}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="contactWhatsapp">{t("whatsapp")}</Label>
+                              <Input
+                                id="contactWhatsapp"
+                                value={newProduct.contactWhatsapp || ""}
+                                onChange={(e) => setNewProduct({ ...newProduct, contactWhatsapp: e.target.value })}
+                                placeholder={t("contactWhatsappPlaceholder")}
+                              />
+                            </div>
                           </div>
                         </div>
 
@@ -1301,12 +1351,40 @@ export default function ProfilePage() {
                           </div>
                         </div>
 
-                        <Button
-                          onClick={handleAddProduct}
-                          disabled={!newProduct.name || !newProduct.nameAr || !newProduct.expiryDate}
-                        >
-                          {t("addProduct")}
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setNewProduct({
+                                name: "",
+                                nameAr: "",
+                                category: "canned",
+                                description: "",
+                                descriptionAr: "",
+                                originalPrice: 0,
+                                discountedPrice: 0,
+                                discount: 0,
+                                expiryDate: "",
+                                quantity: 1,
+                              })
+                              setProductImage(null)
+                            }}
+                          >
+                            {t("reset")}
+                          </Button>
+                          <Button
+                            onClick={handleAddProduct}
+                            disabled={
+                              !newProduct.name ||
+                              !newProduct.nameAr ||
+                              !newProduct.expiryDate ||
+                              !newProduct.originalPrice ||
+                              !newProduct.discountedPrice
+                            }
+                          >
+                            {t("addProduct")}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

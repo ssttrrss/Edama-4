@@ -21,20 +21,19 @@ import {
   ArrowLeft,
   ArrowRight,
   CreditCard,
-  Truck,
-  MapPin,
   Check,
   Clock,
   Loader2,
   Home,
   Building,
   ChevronsRight,
+  MapPin,
 } from "lucide-react"
 import confetti from "canvas-confetti"
 
 // Step components
 const CheckoutSteps = [
-  { id: "shipping", title: "shippingInfo" },
+  { id: "pickup", title: "pickupInfo" },
   { id: "payment", title: "paymentMethod" },
   { id: "review", title: "reviewOrder" },
   { id: "confirmation", title: "orderConfirmation" },
@@ -51,10 +50,10 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState("")
 
   // Form state
-  const [shippingInfo, setShippingInfo] = useState({
+  const [pickupInfo, setPickupInfo] = useState({
     fullName: "",
     phone: "",
-    addressType: "home",
+    locationType: "home",
     address: "",
     city: "",
     area: "",
@@ -71,9 +70,8 @@ export default function CheckoutPage() {
 
   const BackArrow = language === "ar" ? ArrowRight : ArrowLeft
 
-  // Calculate shipping cost and total
-  const shippingCost = items.length > 0 ? 15 : 0
-  const total = subtotal + shippingCost
+  // Calculate total
+  const total = subtotal
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -91,9 +89,9 @@ export default function CheckoutPage() {
   }, [items.length, router, orderComplete])
 
   // Handle form changes
-  const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handlePickupChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setShippingInfo((prev) => ({ ...prev, [name]: value }))
+    setPickupInfo((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleCardInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,8 +117,8 @@ export default function CheckoutPage() {
   // Validate current step
   const validateCurrentStep = () => {
     if (currentStep === 0) {
-      // Validate shipping info
-      if (!shippingInfo.fullName || !shippingInfo.phone || !shippingInfo.address || !shippingInfo.city) {
+      // Validate pickup info
+      if (!pickupInfo.fullName || !pickupInfo.phone || !pickupInfo.address || !pickupInfo.city) {
         toast({
           title: t("errorTitle"),
           description: t("fillRequiredFields"),
@@ -164,7 +162,7 @@ export default function CheckoutPage() {
         id: newOrderId,
         date: new Date().toISOString(),
         items: items,
-        shipping: shippingInfo,
+        pickup: pickupInfo,
         payment: {
           method: paymentMethod,
           ...(paymentMethod === "card" && {
@@ -172,7 +170,6 @@ export default function CheckoutPage() {
           }),
         },
         subtotal,
-        shippingCost,
         total,
         status: "processing",
       }
@@ -242,8 +239,8 @@ export default function CheckoutPage() {
           >
             <Card>
               <CardHeader>
-                <CardTitle>{t("shippingInfo")}</CardTitle>
-                <CardDescription>{t("enterShippingDetails")}</CardDescription>
+                <CardTitle>{t("pickupInfo")}</CardTitle>
+                <CardDescription>{t("enterPickupDetails")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -252,8 +249,8 @@ export default function CheckoutPage() {
                     <Input
                       id="fullName"
                       name="fullName"
-                      value={shippingInfo.fullName}
-                      onChange={handleShippingChange}
+                      value={pickupInfo.fullName}
+                      onChange={handlePickupChange}
                       required
                     />
                   </div>
@@ -262,8 +259,8 @@ export default function CheckoutPage() {
                     <Input
                       id="phone"
                       name="phone"
-                      value={shippingInfo.phone}
-                      onChange={handleShippingChange}
+                      value={pickupInfo.phone}
+                      onChange={handlePickupChange}
                       required
                       dir="ltr"
                     />
@@ -271,10 +268,10 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{t("addressType")}</Label>
+                  <Label>{t("locationType")}</Label>
                   <RadioGroup
-                    defaultValue={shippingInfo.addressType}
-                    onValueChange={(value) => setShippingInfo((prev) => ({ ...prev, addressType: value }))}
+                    defaultValue={pickupInfo.locationType}
+                    onValueChange={(value) => setPickupInfo((prev) => ({ ...prev, locationType: value }))}
                     className="flex gap-4"
                   >
                     <div className="flex items-center space-x-2 rtl:space-x-reverse">
@@ -297,8 +294,8 @@ export default function CheckoutPage() {
                   <Input
                     id="address"
                     name="address"
-                    value={shippingInfo.address}
-                    onChange={handleShippingChange}
+                    value={pickupInfo.address}
+                    onChange={handlePickupChange}
                     required
                   />
                 </div>
@@ -306,22 +303,22 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="city">{t("city")} *</Label>
-                    <Input id="city" name="city" value={shippingInfo.city} onChange={handleShippingChange} required />
+                    <Input id="city" name="city" value={pickupInfo.city} onChange={handlePickupChange} required />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="area">{t("area")}</Label>
-                    <Input id="area" name="area" value={shippingInfo.area} onChange={handleShippingChange} />
+                    <Input id="area" name="area" value={pickupInfo.area} onChange={handlePickupChange} />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">{t("deliveryNotes")}</Label>
+                  <Label htmlFor="notes">{t("pickupNotes")}</Label>
                   <Textarea
                     id="notes"
                     name="notes"
-                    value={shippingInfo.notes}
-                    onChange={handleShippingChange}
-                    placeholder={t("deliveryNotesPlaceholder")}
+                    value={pickupInfo.notes}
+                    onChange={handlePickupChange}
+                    placeholder={t("pickupNotesPlaceholder")}
                     className="min-h-[100px]"
                   />
                 </div>
@@ -389,8 +386,8 @@ export default function CheckoutPage() {
                       className="flex w-full cursor-pointer items-center justify-between rounded-md border p-4 hover:bg-muted"
                     >
                       <div className="flex items-center gap-2">
-                        <Truck className="h-5 w-5 text-primary" />
-                        <span>{t("cashOnDelivery")}</span>
+                        <CreditCard className="h-5 w-5 text-primary" />
+                        <span>{t("cashOnPickup")}</span>
                       </div>
                     </Label>
                   </div>
@@ -425,7 +422,7 @@ export default function CheckoutPage() {
                         dir="ltr"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="expiryDate">{t("expiryDate")}</Label>
                         <Input
@@ -510,10 +507,10 @@ export default function CheckoutPage() {
 
                 <Separator />
 
-                {/* Shipping info */}
+                {/* Pickup info */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-medium">{t("shippingInfo")}</h3>
+                    <h3 className="font-medium">{t("pickupInfo")}</h3>
                     <Button variant="ghost" size="sm" onClick={() => setCurrentStep(0)}>
                       {t("edit")}
                     </Button>
@@ -522,14 +519,14 @@ export default function CheckoutPage() {
                     <div className="flex items-start gap-2">
                       <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
                       <div>
-                        <p className="font-medium">{shippingInfo.fullName}</p>
-                        <p className="text-sm text-muted-foreground">{shippingInfo.phone}</p>
+                        <p className="font-medium">{pickupInfo.fullName}</p>
+                        <p className="text-sm text-muted-foreground">{pickupInfo.phone}</p>
                         <p className="text-sm text-muted-foreground">
-                          {shippingInfo.address}, {shippingInfo.area}, {shippingInfo.city}
+                          {pickupInfo.address}, {pickupInfo.area}, {pickupInfo.city}
                         </p>
-                        {shippingInfo.notes && (
+                        {pickupInfo.notes && (
                           <p className="mt-2 text-sm italic text-muted-foreground">
-                            {t("notes")}: {shippingInfo.notes}
+                            {t("notes")}: {pickupInfo.notes}
                           </p>
                         )}
                       </div>
@@ -561,8 +558,8 @@ export default function CheckoutPage() {
                         </>
                       ) : (
                         <>
-                          <Truck className="h-4 w-4 text-primary" />
-                          <p className="font-medium">{t("cashOnDelivery")}</p>
+                          <CreditCard className="h-4 w-4 text-primary" />
+                          <p className="font-medium">{t("cashOnPickup")}</p>
                         </>
                       )}
                     </div>
@@ -578,10 +575,6 @@ export default function CheckoutPage() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t("subtotal")}</span>
                       <span>{formatCurrency(subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t("shipping")}</span>
-                      <span>{formatCurrency(shippingCost)}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-medium">
@@ -638,7 +631,7 @@ export default function CheckoutPage() {
                     <span>{new Date().toLocaleDateString(language === "ar" ? "ar-EG" : "en-US")}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{t("estimatedDelivery")}</span>
+                    <span className="text-sm font-medium">{t("estimatedPickup")}</span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
                       {new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toLocaleDateString(
@@ -748,10 +741,6 @@ export default function CheckoutPage() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t("subtotal")}</span>
                       <span>{formatCurrency(subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t("shipping")}</span>
-                      <span>{formatCurrency(shippingCost)}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-medium">

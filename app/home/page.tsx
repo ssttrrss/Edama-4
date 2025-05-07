@@ -16,9 +16,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetClose 
 import { Separator } from "@/components/ui/separator"
 import { EcoImpactCalculator } from "@/components/eco-impact-calculator"
 import { products, categories } from "@/lib/data"
-import { Search, Filter, ChevronLeft, ChevronRight, ShoppingCart, Heart, Clock } from "lucide-react"
+import { Search, Filter, ChevronLeft, ChevronRight, ShoppingCart, Heart } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ProfileShortcut } from "@/components/profile-shortcut"
+import { CountdownTimer } from "@/components/countdown-timer"
 
 export default function HomePage() {
   const { t, language, dir } = useTranslation()
@@ -258,7 +259,7 @@ export default function HomePage() {
                       onClick={() => setSelectedCategory(category.id)}
                       className="justify-start"
                     >
-                      {language === "ar" ? category.nameAr : category.nameEn}
+                      {category.icon} {language === "ar" ? category.nameAr : category.nameEn}
                     </Button>
                   ))}
                 </div>
@@ -446,16 +447,9 @@ export default function HomePage() {
                         <Badge className="absolute right-2 top-2 bg-secondary" variant="secondary">
                           {product.discount}% {t("off")}
                         </Badge>
-                        {daysUntilExpiry <= 3 && (
-                          <div className="absolute left-2 top-2 rounded-md bg-red-500/90 px-2 py-1 text-xs text-white">
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {daysUntilExpiry <= 1
-                                ? t("expiresInOneDay")
-                                : t("expiresInDays").replace("{days}", daysUntilExpiry.toString())}
-                            </div>
-                          </div>
-                        )}
+                        <div className="absolute left-2 top-2">
+                          <CountdownTimer expiryDate={product.expiryDate} />
+                        </div>
                       </div>
                       <CardContent className="p-4">
                         <div className="mb-2 text-xs text-muted-foreground">
@@ -536,7 +530,7 @@ export default function HomePage() {
                 <h3 className="mb-4 text-lg font-medium">{t("expiringSoon")}</h3>
                 <div className="space-y-4">
                   {products
-                    .filter((product) => getDaysUntilExpiry(product.expiryDate) <= 3)
+                    .filter((product) => getDaysUntilExpiry(product.expiryDate) <= 30) // Changed to 30 days since we have future dates
                     .slice(0, 3)
                     .map((product, index) => (
                       <motion.div
@@ -564,10 +558,7 @@ export default function HomePage() {
                             <span className="text-sm text-primary font-medium">
                               {product.discountedPrice} {t("currency")}
                             </span>
-                            <span className="flex items-center gap-1 text-xs text-red-500">
-                              <Clock className="h-3 w-3" />
-                              {getDaysUntilExpiry(product.expiryDate)} {t("days")}
-                            </span>
+                            <CountdownTimer expiryDate={product.expiryDate} className="text-xs" />
                           </div>
                         </div>
                       </motion.div>

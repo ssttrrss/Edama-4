@@ -27,9 +27,17 @@ const translations: Translations = {
     ar: "تسجيل الدخول",
     en: "Login",
   },
+  loginAr: {
+    ar: "تسجيل الدخول",
+    en: "تسجيل الدخول",
+  },
   signup: {
     ar: "إنشاء حساب",
     en: "Sign Up",
+  },
+  signupAr: {
+    ar: "إنشاء حساب",
+    en: "إنشاء حساب",
   },
   exploreProducts: {
     ar: "استكشف المنتجات",
@@ -240,9 +248,17 @@ const translations: Translations = {
     ar: "الملف الشخصي",
     en: "Profile",
   },
+  profileAr: {
+    ar: "الملف الشخصي",
+    en: "الملف الشخصي",
+  },
   cart: {
     ar: "السلة",
     en: "Cart",
+  },
+  cartAr: {
+    ar: "السلة",
+    en: "السلة",
   },
   language: {
     ar: "English",
@@ -335,6 +351,10 @@ const translations: Translations = {
     ar: "المفضلة",
     en: "Favorites",
   },
+  favoritesAr: {
+    ar: "المفضلة",
+    en: "المفضلة",
+  },
   settings: {
     ar: "الإعدادات",
     en: "Settings",
@@ -342,6 +362,10 @@ const translations: Translations = {
   logout: {
     ar: "تسجيل الخروج",
     en: "Logout",
+  },
+  logoutAr: {
+    ar: "تسجيل الخروج",
+    en: "تسجيل الخروج",
   },
   // Footer
   rights: {
@@ -364,6 +388,116 @@ const translations: Translations = {
   hidePassword: {
     ar: "إخفاء كلمة المرور",
     en: "Hide password",
+  },
+  // Account types
+  buyer: {
+    ar: "مشتري",
+    en: "Buyer",
+  },
+  seller: {
+    ar: "بائع",
+    en: "Seller",
+  },
+  buyerAccountDescription: {
+    ar: "حساب للمستخدمين الذين يرغبون في شراء المنتجات",
+    en: "Account for users who want to purchase products",
+  },
+  sellerAccountDescription: {
+    ar: "حساب للمتاجر والبائعين الذين يرغبون في بيع المنتجات",
+    en: "Account for stores and sellers who want to sell products",
+  },
+
+  // Countdown timer
+  expired: {
+    ar: "منتهي الصلاحية",
+    en: "Expired",
+  },
+  expiresIn: {
+    ar: "ينتهي في",
+    en: "Expires in",
+  },
+
+  // Seller information
+  sellerInformation: {
+    ar: "معلومات البائع",
+    en: "Seller Information",
+  },
+  shopAddress: {
+    ar: "عنوان المتجر",
+    en: "Shop Address",
+  },
+  shopAddressPlaceholder: {
+    ar: "أدخل عنوان المتجر",
+    en: "Enter shop address",
+  },
+  contactMethod: {
+    ar: "طريقة التواصل",
+    en: "Contact Method",
+  },
+  whatsapp: {
+    ar: "واتساب",
+    en: "WhatsApp",
+  },
+  contactPhonePlaceholder: {
+    ar: "أدخل رقم الهاتف للتواصل",
+    en: "Enter contact phone number",
+  },
+  contactWhatsappPlaceholder: {
+    ar: "أدخل رقم الواتساب للتواصل",
+    en: "Enter WhatsApp number",
+  },
+  contactViaWhatsapp: {
+    ar: "تواصل عبر واتساب",
+    en: "Contact via WhatsApp",
+  },
+  // Burger menu
+  menu: {
+    ar: "القائمة",
+    en: "Menu",
+  },
+  orders: {
+    ar: "الطلبات",
+    en: "Orders",
+  },
+  ordersAr: {
+    ar: "الطلبات",
+    en: "الطلبات",
+  },
+  pickupInfo: {
+    ar: "معلومات الاستلام",
+    en: "Pickup Information",
+  },
+  enterPickupDetails: {
+    ar: "أدخل تفاصيل الاستلام",
+    en: "Enter your pickup details",
+  },
+  pickupNotes: {
+    ar: "ملاحظات الاستلام",
+    en: "Pickup Notes",
+  },
+  pickupNotesPlaceholder: {
+    ar: "أي تعليمات خاصة للاستلام",
+    en: "Any special instructions for pickup",
+  },
+  cashOnPickup: {
+    ar: "الدفع عند الاستلام",
+    en: "Cash on Pickup",
+  },
+  estimatedPickup: {
+    ar: "الاستلام المتوقع",
+    en: "Estimated Pickup",
+  },
+  sendSMS: {
+    ar: "إرسال رسالة نصية",
+    en: "Send SMS",
+  },
+  sendEmail: {
+    ar: "إرسال بريد إلكتروني",
+    en: "Send Email",
+  },
+  locationType: {
+    ar: "نوع الموقع",
+    en: "Location Type",
   },
 }
 

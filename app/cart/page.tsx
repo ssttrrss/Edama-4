@@ -22,9 +22,8 @@ export default function CartPage() {
     window.scrollTo(0, 0)
   }, [])
 
-  // Calculate shipping cost and total
-  const shippingCost = items.length > 0 ? 15 : 0
-  const total = subtotal + shippingCost
+  // Calculate total
+  const total = subtotal
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -137,10 +136,6 @@ export default function CartPage() {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t("subtotal")}</span>
                   <span>{formatCurrency(subtotal)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("shipping")}</span>
-                  <span>{formatCurrency(shippingCost)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-medium">

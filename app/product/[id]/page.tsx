@@ -28,7 +28,6 @@ import {
   Heart,
   Store,
   Calendar,
-  Clock,
   Star,
   MessageSquare,
   Share2,
@@ -37,8 +36,12 @@ import {
   Leaf,
   FileText,
   MapPin,
+  Phone,
 } from "lucide-react"
 import { motion } from "framer-motion"
+
+// Import the CountdownTimer component
+import { CountdownTimer } from "@/components/countdown-timer"
 
 export default function ProductPage() {
   const { id } = useParams()
@@ -259,16 +262,10 @@ export default function ProductPage() {
           <Badge className="absolute right-4 top-4 bg-secondary">
             {product.discount}% {t("off")}
           </Badge>
-          {daysUntilExpiry <= 3 && (
-            <div className="absolute left-4 top-4 rounded-md bg-red-500/90 px-2 py-1 text-xs text-white">
-              <div className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {daysUntilExpiry <= 1
-                  ? t("expiresInOneDay")
-                  : t("expiresInDays").replace("{days}", daysUntilExpiry.toString())}
-              </div>
-            </div>
-          )}
+          {/* Replace the existing expiration date badge */}
+          <div className="absolute left-4 top-4">
+            <CountdownTimer expiryDate={product.expiryDate} />
+          </div>
         </motion.div>
 
         {/* Product info */}
@@ -370,6 +367,42 @@ export default function ProductPage() {
               <span>{t("ecoFriendly")}</span>
             </div>
           </div>
+          {product.shopAddress && (
+            <div className="mt-4 space-y-3 rounded-lg bg-muted/30 p-4">
+              <h3 className="font-medium">{t("sellerInformation")}</h3>
+              <div className="flex items-center gap-2 text-sm">
+                <Store className="h-4 w-4 text-primary" />
+                <span>{language === "ar" ? product.supermarketAr : product.supermarket}</span>
+              </div>
+              {product.shopAddress && (
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  <span>{product.shopAddress}</span>
+                </div>
+              )}
+              {product.contactPhone && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="h-4 w-4 text-primary" />
+                  <a href={`tel:${product.contactPhone}`} className="hover:underline">
+                    {product.contactPhone}
+                  </a>
+                </div>
+              )}
+              {product.contactWhatsapp && (
+                <div className="flex items-center gap-2 text-sm">
+                  <MessageSquare className="h-4 w-4 text-primary" />
+                  <a
+                    href={`https://wa.me/${product.contactWhatsapp.replace(/\D/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
+                    {t("contactViaWhatsapp")}
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
         </motion.div>
       </div>
 
