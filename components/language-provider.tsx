@@ -499,6 +499,34 @@ const translations: Translations = {
     ar: "نوع الموقع",
     en: "Location Type",
   },
+  contactUs: {
+    ar: "اتصل بنا",
+    en: "Contact Us",
+  },
+  phone: {
+    ar: "الهاتف",
+    en: "Phone",
+  },
+  email: {
+    ar: "البريد الإلكتروني",
+    en: "Email",
+  },
+  pickupAtStore: {
+    ar: "الاستلام من المتجر",
+    en: "Pickup at store",
+  },
+  notProvided: {
+    ar: "غير متوفر",
+    en: "Not provided",
+  },
+  readyForPickup: {
+    ar: "جاهز للاستلام",
+    en: "Ready for pickup",
+  },
+  completed: {
+    ar: "مكتمل",
+    en: "Completed",
+  },
 }
 
 type LanguageContextType = {
