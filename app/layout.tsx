@@ -1,36 +1,42 @@
 import type React from "react"
-import "@/app/globals.css"
-import { Inter } from "next/font/google"
+import type { Metadata } from "next"
+import { Cairo } from "next/font/google"
+import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { LanguageProvider } from "@/components/language-provider"
-import { CartProvider } from "@/components/cart-provider"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
+import { Toaster } from "@/components/ui/toaster"
+import { CartProvider } from "@/components/cart-provider"
 
-const inter = Inter({ subsets: ["latin"] })
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  variable: "--font-cairo",
+})
 
-export const metadata = {
-  title: "Edama - Save Money & Reduce Food Waste",
-  description: "Discover great deals on quality products approaching their best-before date from local Egyptian stores",
+export const metadata: Metadata = {
+  title: "Edama - Sustainable E-commerce",
+  description: "Connect with supermarkets offering discounted near-expiry products, reduce food waste, and save money.",
     generator: 'v0.dev'
 }
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="light">
+    <html lang="ar" suppressHydrationWarning>
+      <body className={`${cairo.variable} font-sans`}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LanguageProvider>
             <CartProvider>
               <div className="flex min-h-screen flex-col">
                 <Header />
-                <div className="flex-1">{children}</div>
+                <main className="flex-1">{children}</main>
                 <Footer />
               </div>
+              <Toaster />
             </CartProvider>
           </LanguageProvider>
         </ThemeProvider>

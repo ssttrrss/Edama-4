@@ -1,79 +1,95 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import type React from "react"
+import { createContext, useContext, useState, useEffect } from "react"
+import { useToast } from "@/components/ui/use-toast"
 
-type CartItem = {
-  id: string
+export type CartItem = {
+  id: number
   name: string
-  name_ar: string
+  nameAr: string
   price: number
-  original_price: number
+  originalPrice: number
+  image: string
   quantity: number
-  image_url: string
   supermarket: string
-  expiry_date: string
+  expiryDate: string
 }
 
 type CartContextType = {
   items: CartItem[]
   addItem: (item: CartItem) => void
-  removeItem: (id: string) => void
-  updateQuantity: (id: string, quantity: number) => void
+  removeItem: (id: number) => void
+  updateQuantity: (id: number, quantity: number) => void
   clearCart: () => void
-  totalItems: number
+  itemCount: number
   subtotal: number
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
+  const [itemCount, setItemCount] = useState(0)
+  const [subtotal, setSubtotal] = useState(0)
+  const { toast } = useToast()
 
-  // Load cart from localStorage on client-side
+  // Load cart from localStorage on initial render
   useEffect(() => {
-    try {
-      const savedCart = localStorage.getItem("edama-cart")
-      if (savedCart) {
-        setItems(JSON.parse(savedCart))
+    const savedCart = localStorage.getItem("edama-cart")
+    if (savedCart) {
+      try {
+        const parsedCart = JSON.parse(savedCart)
+        setItems(parsedCart)
+      } catch (error) {
+        console.error("Failed to parse cart from localStorage", error)
       }
-    } catch (error) {
-      console.error("Failed to load cart from localStorage:", error)
     }
   }, [])
 
-  // Save cart to localStorage whenever it changes
+  // Update localStorage whenever cart changes
   useEffect(() => {
-    try {
+    if (items.length > 0) {
       localStorage.setItem("edama-cart", JSON.stringify(items))
-    } catch (error) {
-      console.error("Failed to save cart to localStorage:", error)
+    } else {
+      localStorage.removeItem("edama-cart")
     }
+
+    // Update item count and subtotal
+    const count = items.reduce((total, item) => total + item.quantity, 0)
+    setItemCount(count)
+
+    const total = items.reduce((total, item) => total + item.price * item.quantity, 0)
+    setSubtotal(total)
   }, [items])
 
-  const addItem = (newItem: CartItem) => {
+  const addItem = (item: CartItem) => {
     setItems((prevItems) => {
-      const existingItemIndex = prevItems.findIndex((item) => item.id === newItem.id)
+      // Check if item already exists in cart
+      const existingItemIndex = prevItems.findIndex((i) => i.id === item.id)
 
       if (existingItemIndex >= 0) {
-        // Item exists, update quantity
+        // Update quantity of existing item
         const updatedItems = [...prevItems]
-        updatedItems[existingItemIndex] = {
-          ...updatedItems[existingItemIndex],
-          quantity: updatedItems[existingItemIndex].quantity + newItem.quantity,
-        }
+        updatedItems[existingItemIndex].quantity += item.quantity
         return updatedItems
       } else {
-        // Item doesn't exist, add it
-        return [...prevItems, newItem]
+        // Add new item to cart
+        return [...prevItems, item]
       }
+    })
+
+    toast({
+      title: "Added to cart",
+      description: `${item.quantity} × ${item.name} added to your cart`,
     })
   }
 
-  const removeItem = (id: string) => {
+  const removeItem = (id: number) => {
     setItems((prevItems) => prevItems.filter((item) => item.id !== id))
   }
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = (id: number, quantity: number) => {
     if (quantity <= 0) {
       removeItem(id)
       return
@@ -84,11 +100,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => {
     setItems([])
+    localStorage.removeItem("edama-cart")
   }
-
-  const totalItems = items.reduce((total, item) => total + item.quantity, 0)
-
-  const subtotal = items.reduce((total, item) => total + item.price * item.quantity, 0)
 
   return (
     <CartContext.Provider
@@ -98,7 +111,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeItem,
         updateQuantity,
         clearCart,
-        totalItems,
+        itemCount,
         subtotal,
       }}
     >

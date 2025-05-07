@@ -1,107 +1,80 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useTranslation } from "@/components/language-provider"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { User, Package, Settings, LogOut } from "lucide-react"
-import { useLanguage } from "@/components/language-provider"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { User, Settings, Package, Heart } from "lucide-react"
+import { motion } from "framer-motion"
+import { useState, useEffect } from "react"
 
-type ProfileShortcutProps = {
-  onSelect?: () => void
-}
-
-export default function ProfileShortcut({ onSelect }: ProfileShortcutProps) {
-  const { t } = useLanguage()
+export function ProfileShortcut() {
+  const { t } = useTranslation()
+  const [userData, setUserData] = useState<any>(null)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [username, setUsername] = useState("")
 
-  // Check if user is logged in on client-side
   useEffect(() => {
-    try {
-      const authData = localStorage.getItem("edama-auth")
-      if (authData) {
-        const { user } = JSON.parse(authData)
+    const user = localStorage.getItem("edama-user")
+    if (user) {
+      try {
+        const parsedUser = JSON.parse(user)
+        setUserData(parsedUser)
         setIsLoggedIn(true)
-        setUsername(user?.username || "User")
+      } catch (error) {
+        console.error("Failed to parse user data", error)
       }
-    } catch (error) {
-      console.error("Failed to load auth data:", error)
     }
   }, [])
 
-  const handleLogout = () => {
-    try {
-      localStorage.removeItem("edama-auth")
-      setIsLoggedIn(false)
-      setUsername("")
-      if (onSelect) onSelect()
-      // Redirect to home page
-      window.location.href = "/"
-    } catch (error) {
-      console.error("Failed to logout:", error)
-    }
-  }
-
-  const handleSelect = () => {
-    if (onSelect) onSelect()
-  }
-
-  if (!isLoggedIn) {
-    return (
-      <div className="flex items-center gap-2">
-        <Button asChild variant="ghost" onClick={handleSelect}>
-          <Link href="/login">{t("nav.login")}</Link>
-        </Button>
-        <Button asChild variant="default" className="bg-emerald-600 hover:bg-emerald-700" onClick={handleSelect}>
-          <Link href="/signup">{t("nav.signup")}</Link>
-        </Button>
-      </div>
-    )
-  }
+  if (!isLoggedIn) return null
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <User className="h-5 w-5" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <div className="flex flex-col space-y-1 p-2">
-          <p className="text-sm font-medium leading-none">{username}</p>
-        </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild onClick={handleSelect}>
-          <Link href="/profile" className="w-full cursor-pointer">
-            <User className="mr-2 h-4 w-4" />
-            <span>{t("nav.profile")}</span>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="fixed bottom-6 right-6 z-40"
+    >
+      <div className="flex flex-col items-end space-y-2">
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="flex flex-col items-end space-y-2"
+        >
+          <Link href="/profile?tab=orders">
+            <Button size="icon" variant="outline" className="rounded-full bg-background shadow-md">
+              <Package className="h-5 w-5" />
+              <span className="sr-only">{t("myOrders")}</span>
+            </Button>
           </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild onClick={handleSelect}>
-          <Link href="/profile/orders" className="w-full cursor-pointer">
-            <Package className="mr-2 h-4 w-4" />
-            <span>Orders</span>
+          <Link href="/profile?tab=favorites">
+            <Button size="icon" variant="outline" className="rounded-full bg-background shadow-md">
+              <Heart className="h-5 w-5" />
+              <span className="sr-only">{t("favorites")}</span>
+            </Button>
           </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild onClick={handleSelect}>
-          <Link href="/profile/settings" className="w-full cursor-pointer">
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
+          <Link href="/profile?tab=settings">
+            <Button size="icon" variant="outline" className="rounded-full bg-background shadow-md">
+              <Settings className="h-5 w-5" />
+              <span className="sr-only">{t("settings")}</span>
+            </Button>
           </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </motion.div>
+        <Link href="/profile">
+          <Button size="icon" className="h-14 w-14 rounded-full bg-primary shadow-lg">
+            {userData?.avatar ? (
+              <Avatar className="h-12 w-12 border-2 border-white">
+                <AvatarImage src={userData.avatar || "/placeholder.svg"} alt={userData.name} />
+                <AvatarFallback>{userData.name?.charAt(0) || <User className="h-6 w-6" />}</AvatarFallback>
+              </Avatar>
+            ) : (
+              <User className="h-6 w-6" />
+            )}
+            <span className="sr-only">{t("myProfile")}</span>
+          </Button>
+        </Link>
+      </div>
+    </motion.div>
   )
 }
