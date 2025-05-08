@@ -1,11 +1,8 @@
 "use client"
 
 import { AvatarFallback } from "@/components/ui/avatar"
-
 import { Avatar } from "@/components/ui/avatar"
-
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
@@ -18,7 +15,6 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { products } from "@/lib/data"
-import { ProfileShortcut } from "@/components/profile-shortcut"
 import {
   ArrowLeft,
   ArrowRight,
@@ -37,6 +33,11 @@ import {
   FileText,
   MapPin,
   Phone,
+  Info,
+  Utensils,
+  Weight,
+  Thermometer,
+  AlertTriangle,
 } from "lucide-react"
 import { motion } from "framer-motion"
 
@@ -203,6 +204,29 @@ export default function ProductPage() {
     return diffDays
   }
 
+  // Animation variants
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut",
+      },
+    },
+  }
+
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  }
+
   if (isLoading || !product) {
     return (
       <div className="container mx-auto flex min-h-[60vh] items-center justify-center px-4 py-8">
@@ -216,6 +240,23 @@ export default function ProductPage() {
 
   const daysUntilExpiry = getDaysUntilExpiry(product.expiryDate)
 
+  // Mock product details for enhanced description section
+  const productDetails = {
+    ingredients: "Organic wheat flour, water, sea salt, yeast, olive oil",
+    nutritionalInfo: {
+      calories: "250 kcal per 100g",
+      protein: "8g",
+      carbs: "48g",
+      fat: "2g",
+      fiber: "3g",
+    },
+    storageInstructions: "Store in a cool, dry place. Once opened, consume within 2 days.",
+    allergens: "Contains wheat gluten. May contain traces of nuts and sesame seeds.",
+    weight: "500g",
+    origin: "Local farm in Cairo, Egypt",
+    certifications: ["Organic", "Non-GMO", "Vegan"],
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Breadcrumb */}
@@ -225,11 +266,16 @@ export default function ProductPage() {
         transition={{ duration: 0.3 }}
         className="mb-6 flex items-center text-sm text-muted-foreground"
       >
-        <Button variant="ghost" size="sm" className="mr-2 gap-1" onClick={() => router.back()}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mr-2 gap-1 hover:bg-primary/10 transition-colors duration-300"
+          onClick={() => router.back()}
+        >
           <BackArrow className="h-4 w-4" />
           {t("back")}
         </Button>
-        <Link href="/home" className="hover:text-primary">
+        <Link href="/home" className="hover:text-primary transition-colors duration-300">
           {t("home")}
         </Link>
         <span className="mx-2">/</span>
@@ -243,7 +289,7 @@ export default function ProductPage() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="relative overflow-hidden rounded-lg border bg-background"
+          className="relative overflow-hidden rounded-lg border bg-background shadow-md hover:shadow-lg transition-shadow duration-300"
         >
           <div
             className="relative aspect-square overflow-hidden"
@@ -255,11 +301,11 @@ export default function ProductPage() {
               src={product.image || "/placeholder.svg"}
               alt={language === "ar" ? product.nameAr : product.name}
               fill
-              className={`object-cover transition-transform duration-200 ${isImageZoomed ? "scale-150" : ""}`}
+              className={`object-cover transition-transform duration-300 ${isImageZoomed ? "scale-150" : ""}`}
               style={isImageZoomed ? { transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%` } : {}}
             />
           </div>
-          <Badge className="absolute right-4 top-4 bg-secondary">
+          <Badge className="absolute right-4 top-4 bg-secondary flash">
             {product.discount}% {t("off")}
           </Badge>
           {/* Replace the existing expiration date badge */}
@@ -269,44 +315,45 @@ export default function ProductPage() {
         </motion.div>
 
         {/* Product info */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col"
-        >
-          <h1 className="mb-2 text-3xl font-bold">{language === "ar" ? product.nameAr : product.name}</h1>
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="flex flex-col">
+          <motion.h1 variants={fadeInUp} className="mb-2 text-3xl font-bold">
+            {language === "ar" ? product.nameAr : product.name}
+          </motion.h1>
 
-          <div className="mb-4 flex flex-wrap gap-4">
+          <motion.div variants={fadeInUp} className="mb-4 flex flex-wrap gap-4">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Store className="h-4 w-4" />
+              <Store className="h-4 w-4 text-primary" />
               <span>
                 {t("soldBy")}: {language === "ar" ? product.supermarketAr : product.supermarket}
               </span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
+              <Calendar className="h-4 w-4 text-primary" />
               <span>
                 {t("expiresOn")}: {formatDate(product.expiryDate)}
               </span>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="mb-6 flex items-end gap-3">
+          <motion.div variants={fadeInUp} className="mb-6 flex items-end gap-3">
             <div className="text-3xl font-bold text-primary">
               {product.discountedPrice} {t("currency")}
             </div>
             <div className="text-lg text-muted-foreground line-through">
               {product.originalPrice} {t("currency")}
             </div>
-            <Badge variant="outline" className="ml-2">
+            <Badge variant="outline" className="ml-2 bg-secondary/10">
               {product.discount}% {t("off")}
             </Badge>
-          </div>
+          </motion.div>
+
+          <motion.div variants={fadeInUp} className="mb-6 rounded-lg bg-secondary/10 p-4">
+            <p className="text-sm leading-relaxed">{language === "ar" ? product.descriptionAr : product.description}</p>
+          </motion.div>
 
           <Separator className="mb-6" />
 
-          <div className="mb-6">
+          <motion.div variants={fadeInUp} className="mb-6">
             <h2 className="mb-3 text-lg font-medium">{t("quantity")}</h2>
             <div className="flex h-10 w-32 items-center">
               <Button
@@ -314,46 +361,62 @@ export default function ProductPage() {
                 size="icon"
                 onClick={decreaseQuantity}
                 disabled={quantity <= 1}
-                className="h-full rounded-r-none"
+                className="h-full rounded-r-none hover:bg-primary/10 transition-colors duration-300"
               >
                 <Minus className="h-4 w-4" />
               </Button>
               <div className="flex h-full flex-1 items-center justify-center border-y bg-background px-4 text-center">
                 {quantity}
               </div>
-              <Button variant="outline" size="icon" onClick={increaseQuantity} className="h-full rounded-l-none">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={increaseQuantity}
+                className="h-full rounded-l-none hover:bg-primary/10 transition-colors duration-300"
+              >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="mb-6 grid grid-cols-2 gap-4">
-            <Button size="lg" className="w-full gap-2" onClick={handleAddToCart}>
+          <motion.div variants={fadeInUp} className="mb-6 grid grid-cols-2 gap-4">
+            <Button
+              size="lg"
+              className="w-full gap-2 hover:scale-105 transition-transform duration-300"
+              onClick={handleAddToCart}
+            >
               <ShoppingCart className="h-5 w-5" />
               {t("addToCart")}
             </Button>
-            <Button variant="secondary" size="lg" className="w-full gap-2" onClick={handleBuyNow}>
+            <Button
+              variant="secondary"
+              size="lg"
+              className="w-full gap-2 hover:scale-105 transition-transform duration-300"
+              onClick={handleBuyNow}
+            >
               {t("buyNow")}
             </Button>
-          </div>
+          </motion.div>
 
-          <div className="mb-6 flex gap-4">
+          <motion.div variants={fadeInUp} className="mb-6 flex gap-4">
             <Button
               variant="outline"
               size="sm"
-              className={`gap-2 ${isFavorite ? "text-red-500 hover:text-red-600" : ""}`}
+              className={`gap-2 transition-all duration-300 hover:scale-105 ${
+                isFavorite ? "text-red-500 hover:text-red-600 hover:bg-red-50" : "hover:text-red-500 hover:bg-red-50"
+              }`}
               onClick={toggleFavorite}
             >
               <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
               {isFavorite ? t("savedToFavorites") : t("saveToFavorites")}
             </Button>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2 hover:bg-primary/10 transition-colors duration-300">
               <Share2 className="h-5 w-5" />
               {t("share")}
             </Button>
-          </div>
+          </motion.div>
 
-          <div className="space-y-3 rounded-lg bg-muted/30 p-4">
+          <motion.div variants={fadeInUp} className="space-y-3 rounded-lg bg-muted/30 p-4">
             <div className="flex items-center gap-2 text-sm">
               <Truck className="h-4 w-4 text-primary" />
               <span>{t("fastDelivery")}</span>
@@ -366,9 +429,9 @@ export default function ProductPage() {
               <Leaf className="h-4 w-4 text-primary" />
               <span>{t("ecoFriendly")}</span>
             </div>
-          </div>
+          </motion.div>
           {product.shopAddress && (
-            <div className="mt-4 space-y-3 rounded-lg bg-muted/30 p-4">
+            <motion.div variants={fadeInUp} className="mt-4 space-y-3 rounded-lg bg-muted/30 p-4">
               <h3 className="font-medium">{t("sellerInformation")}</h3>
               <div className="flex items-center gap-2 text-sm">
                 <Store className="h-4 w-4 text-primary" />
@@ -401,7 +464,7 @@ export default function ProductPage() {
                   </a>
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
         </motion.div>
       </div>
@@ -415,22 +478,26 @@ export default function ProductPage() {
       >
         <Tabs defaultValue="description" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start">
-            <TabsTrigger value="description" className="flex gap-2">
+            <TabsTrigger value="description" className="flex gap-2 transition-all duration-300 hover:bg-primary/10">
               <FileText className="h-4 w-4" />
               {t("description")}
             </TabsTrigger>
-            <TabsTrigger value="reviews" className="flex gap-2">
+            <TabsTrigger value="details" className="flex gap-2 transition-all duration-300 hover:bg-primary/10">
+              <Info className="h-4 w-4" />
+              {t("details")}
+            </TabsTrigger>
+            <TabsTrigger value="reviews" className="flex gap-2 transition-all duration-300 hover:bg-primary/10">
               <MessageSquare className="h-4 w-4" />
               {t("reviews")}
             </TabsTrigger>
-            <TabsTrigger value="shipping" className="flex gap-2">
+            <TabsTrigger value="shipping" className="flex gap-2 transition-all duration-300 hover:bg-primary/10">
               <Truck className="h-4 w-4" />
               {t("shippingInfo")}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="description" className="mt-6">
-            <Card>
+            <Card className="hover-glow transition-shadow duration-300">
               <CardContent className="p-6">
                 <p className="text-muted-foreground">
                   {language === "ar" ? product.descriptionAr : product.description}
@@ -479,8 +546,106 @@ export default function ProductPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="details" className="mt-6">
+            <Card className="hover-glow transition-shadow duration-300">
+              <CardContent className="p-6">
+                <div className="grid gap-8 md:grid-cols-2">
+                  {/* Ingredients & Nutrition */}
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="mb-3 flex items-center gap-2 text-lg font-medium">
+                        <Utensils className="h-5 w-5 text-primary" />
+                        {t("ingredients")}
+                      </h3>
+                      <div className="rounded-lg bg-muted/30 p-4">
+                        <p className="text-sm">{productDetails.ingredients}</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="mb-3 flex items-center gap-2 text-lg font-medium">
+                        <Info className="h-5 w-5 text-primary" />
+                        {t("nutritionalInformation")}
+                      </h3>
+                      <div className="rounded-lg bg-muted/30 p-4">
+                        <ul className="space-y-2 text-sm">
+                          <li className="flex justify-between">
+                            <span className="font-medium">{t("calories")}:</span>
+                            <span>{productDetails.nutritionalInfo.calories}</span>
+                          </li>
+                          <li className="flex justify-between">
+                            <span className="font-medium">{t("protein")}:</span>
+                            <span>{productDetails.nutritionalInfo.protein}</span>
+                          </li>
+                          <li className="flex justify-between">
+                            <span className="font-medium">{t("carbohydrates")}:</span>
+                            <span>{productDetails.nutritionalInfo.carbs}</span>
+                          </li>
+                          <li className="flex justify-between">
+                            <span className="font-medium">{t("fat")}:</span>
+                            <span>{productDetails.nutritionalInfo.fat}</span>
+                          </li>
+                          <li className="flex justify-between">
+                            <span className="font-medium">{t("fiber")}:</span>
+                            <span>{productDetails.nutritionalInfo.fiber}</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Storage & Additional Info */}
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="mb-3 flex items-center gap-2 text-lg font-medium">
+                        <Thermometer className="h-5 w-5 text-primary" />
+                        {t("storageInstructions")}
+                      </h3>
+                      <div className="rounded-lg bg-muted/30 p-4">
+                        <p className="text-sm">{productDetails.storageInstructions}</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="mb-3 flex items-center gap-2 text-lg font-medium">
+                        <AlertTriangle className="h-5 w-5 text-primary" />
+                        {t("allergens")}
+                      </h3>
+                      <div className="rounded-lg bg-muted/30 p-4">
+                        <p className="text-sm">{productDetails.allergens}</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="mb-3 flex items-center gap-2 text-lg font-medium">
+                        <Weight className="h-5 w-5 text-primary" />
+                        {t("additionalInformation")}
+                      </h3>
+                      <div className="rounded-lg bg-muted/30 p-4">
+                        <ul className="space-y-2 text-sm">
+                          <li className="flex justify-between">
+                            <span className="font-medium">{t("weight")}:</span>
+                            <span>{productDetails.weight}</span>
+                          </li>
+                          <li className="flex justify-between">
+                            <span className="font-medium">{t("origin")}:</span>
+                            <span>{productDetails.origin}</span>
+                          </li>
+                          <li className="flex justify-between">
+                            <span className="font-medium">{t("certifications")}:</span>
+                            <span>{productDetails.certifications.join(", ")}</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="reviews" className="mt-6">
-            <Card>
+            <Card className="hover-glow transition-shadow duration-300">
               <CardContent className="p-6">
                 <div className="mb-6 flex items-center justify-between">
                   <div>
@@ -497,14 +662,14 @@ export default function ProductPage() {
                       <span className="text-sm text-muted-foreground">4.0 (12 {t("reviews")})</span>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="hover:bg-primary/10 transition-colors duration-300">
                     {t("writeReview")}
                   </Button>
                 </div>
 
                 <div className="space-y-6">
                   {/* Sample reviews */}
-                  <div className="rounded-lg border p-4">
+                  <div className="rounded-lg border p-4 hover:shadow-md transition-shadow duration-300">
                     <div className="mb-2 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
@@ -527,7 +692,7 @@ export default function ProductPage() {
                     </p>
                   </div>
 
-                  <div className="rounded-lg border p-4">
+                  <div className="rounded-lg border p-4 hover:shadow-md transition-shadow duration-300">
                     <div className="mb-2 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
@@ -548,7 +713,7 @@ export default function ProductPage() {
                     <p className="text-sm text-muted-foreground">Very fresh and tasty. Delivery was prompt.</p>
                   </div>
 
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full hover:bg-primary/10 transition-colors duration-300">
                     {t("loadMoreReviews")}
                   </Button>
                 </div>
@@ -557,7 +722,7 @@ export default function ProductPage() {
           </TabsContent>
 
           <TabsContent value="shipping" className="mt-6">
-            <Card>
+            <Card className="hover-glow transition-shadow duration-300">
               <CardContent className="p-6">
                 <h3 className="mb-4 text-lg font-medium">{t("shippingAndDelivery")}</h3>
 
@@ -620,7 +785,10 @@ export default function ProductPage() {
           <h2 className="mb-6 text-2xl font-bold">{t("similarProducts")}</h2>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {similarProducts.map((product) => (
-              <Card key={product.id} className="overflow-hidden transition-all hover:shadow-md">
+              <Card
+                key={product.id}
+                className="overflow-hidden transition-all duration-300 hover:shadow-md product-card"
+              >
                 <div className="relative">
                   <Link href={`/product/${product.id}`}>
                     <div className="relative h-48 w-full overflow-hidden">
@@ -628,11 +796,11 @@ export default function ProductPage() {
                         src={product.image || "/placeholder.svg"}
                         alt={language === "ar" ? product.nameAr : product.name}
                         fill
-                        className="object-cover transition-transform hover:scale-105"
+                        className="object-cover transition-transform duration-500 hover:scale-110"
                       />
                     </div>
                   </Link>
-                  <Badge className="absolute right-2 top-2 bg-secondary" variant="secondary">
+                  <Badge className="absolute right-2 top-2 bg-secondary flash" variant="secondary">
                     {product.discount}% {t("off")}
                   </Badge>
                 </div>
@@ -641,7 +809,7 @@ export default function ProductPage() {
                     {language === "ar" ? product.supermarketAr : product.supermarket}
                   </div>
                   <Link href={`/product/${product.id}`}>
-                    <h3 className="mb-1 line-clamp-1 font-medium hover:text-primary">
+                    <h3 className="mb-1 line-clamp-1 font-medium transition-colors duration-300 hover:text-primary">
                       {language === "ar" ? product.nameAr : product.name}
                     </h3>
                   </Link>
@@ -657,7 +825,7 @@ export default function ProductPage() {
                     <Button
                       variant="default"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 hover:scale-105 transition-transform duration-300"
                       onClick={() =>
                         addItem({
                           id: product.id,
@@ -675,7 +843,7 @@ export default function ProductPage() {
                       <ShoppingCart className="mr-2 h-4 w-4" />
                       {t("addToCart")}
                     </Button>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" className="hover:bg-red-50 transition-colors duration-300">
                       <Heart className="h-4 w-4" />
                     </Button>
                   </div>
@@ -685,8 +853,6 @@ export default function ProductPage() {
           </div>
         </motion.div>
       )}
-      {/* Profile Shortcut */}
-      <ProfileShortcut />
     </div>
   )
 }

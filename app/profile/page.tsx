@@ -6,70 +6,39 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import { useTranslation } from "@/components/language-provider"
+import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/components/ui/use-toast"
-import { Progress } from "@/components/ui/progress"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { motion } from "framer-motion"
 import {
-  Package,
   Heart,
   LogOut,
   Edit,
   Save,
   Phone,
-  Mail,
   Clock,
   ShoppingBag,
   CheckCircle,
   AlertCircle,
   Loader2,
-  Trash2,
-  Upload,
   Star,
   MessageSquare,
-  Store,
   Camera,
-  Plus,
   Award,
   Leaf,
-  BadgePercent,
   Zap,
-  ChevronRight,
   Recycle,
-  Lightbulb,
   Smile,
   Frown,
   Meh,
-  Calendar,
-  DollarSign,
-  Eye,
-  EyeOff,
-  MoreHorizontal,
-  FileText,
-  Share2,
   MapPin,
-  Filter,
-  ArrowUpDown,
   Search,
-  HelpCircle,
+  Trash2,
 } from "lucide-react"
 
 // Sample reviews data
@@ -297,12 +266,14 @@ export default function ProfilePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  const { user, updateProfile, logout } = useAuth()
   const [activeTab, setActiveTab] = useState("overview")
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [userData, setUserData] = useState<any>(null)
   const [orders, setOrders] = useState<any[]>([])
   const [favorites, setFavorites] = useState<any[]>([])
+  const [filteredFavorites, setFilteredFavorites] = useState<any[]>([])
   const [favoriteStores, setFavoriteStores] = useState(sampleFavoriteStores)
   const [reviews] = useState(sampleReviews)
   const [uploadedProducts, setUploadedProducts] = useState(sampleUploadedProducts)
@@ -353,16 +324,16 @@ export default function ProfilePage() {
 
   // Check if user is logged in - Fixed dependency array and initialization logic
   useEffect(() => {
+    // Redirect if not authenticated
+    if (!user) {
+      router.push("/login")
+      return
+    }
+
     // Prevent multiple initializations
     if (isInitialized) return
 
     const initializeUserData = async () => {
-      const user = localStorage.getItem("edama-user")
-      if (!user) {
-        router.push("/login")
-        return
-      }
-
       // Get tab from URL if present
       const tab = searchParams.get("tab")
       if (tab) {
@@ -370,48 +341,25 @@ export default function ProfilePage() {
       }
 
       try {
-        // Load user data
-        const parsedUser = JSON.parse(user)
-        const userData = {
-          name: parsedUser.name || "User Name",
-          email: parsedUser.email || "user@example.com",
-          phone: parsedUser.phone || "+20 123 456 7890",
-          address: parsedUser.address || "Cairo, Egypt",
-          joinDate: parsedUser.joinDate || new Date().toISOString(),
-          avatar: parsedUser.avatar || "/placeholder.svg?height=100&width=100",
-          bio: parsedUser.bio || "Eco-conscious shopper passionate about reducing food waste.",
-          accountType: parsedUser.accountType || "buyer",
-          storeName: parsedUser.storeName || "Your Store",
-          storeNameAr: parsedUser.storeNameAr || "متجرك",
-          storeDescription: parsedUser.storeDescription || "Quality products at affordable prices.",
-          storeDescriptionAr: parsedUser.storeDescriptionAr || "منتجات ذات جودة عالية بأسعار معقولة.",
-          storeLocation: parsedUser.storeLocation || "Cairo, Egypt",
-          storeLocationAr: parsedUser.storeLocationAr || "القاهرة، مصر",
-          storePhone: parsedUser.storePhone || "+20 123 456 7890",
-          storeEmail: parsedUser.storeEmail || "store@example.com",
-          storeWebsite: parsedUser.storeWebsite || "",
-          storeLogo: parsedUser.storeLogo || "/placeholder.svg?height=100&width=100",
-          storeCoverImage: parsedUser.storeCoverImage || "/placeholder.svg?height=400&width=1200",
-        }
-
-        setUserData(userData)
+        // Set user data from auth context
+        setUserData(user)
         setEditedUser({
-          name: userData.name,
-          email: userData.email,
-          phone: userData.phone,
-          address: userData.address,
-          bio: userData.bio,
-          storeName: userData.storeName,
-          storeNameAr: userData.storeNameAr,
-          storeDescription: userData.storeDescription,
-          storeDescriptionAr: userData.storeDescriptionAr,
-          storeLocation: userData.storeLocation,
-          storeLocationAr: userData.storeLocationAr,
-          storePhone: userData.storePhone,
-          storeEmail: userData.storeEmail,
-          storeWebsite: userData.storeWebsite,
+          name: user.name,
+          email: user.email,
+          phone: user.phone || "",
+          address: user.address || "",
+          bio: user.bio || "",
+          storeName: user.storeName || "",
+          storeNameAr: user.storeNameAr || "",
+          storeDescription: user.storeDescription || "",
+          storeDescriptionAr: user.storeDescriptionAr || "",
+          storeLocation: user.storeLocation || "",
+          storeLocationAr: user.storeLocationAr || "",
+          storePhone: user.storePhone || "",
+          storeEmail: user.storeEmail || "",
+          storeWebsite: user.storeWebsite || "",
         })
-        setAccountType(parsedUser.accountType || "buyer")
+        setAccountType(user.accountType || "buyer")
 
         // Load orders
         const savedOrders = localStorage.getItem("edama-orders")
@@ -427,7 +375,9 @@ export default function ProfilePage() {
         const savedFavorites = localStorage.getItem("edama-favorites")
         if (savedFavorites) {
           try {
-            setFavorites(JSON.parse(savedFavorites))
+            const parsedFavorites = JSON.parse(savedFavorites)
+            setFavorites(parsedFavorites)
+            setFilteredFavorites(parsedFavorites)
           } catch (error) {
             console.error("Failed to parse favorites", error)
           }
@@ -442,34 +392,51 @@ export default function ProfilePage() {
     }
 
     initializeUserData()
-  }, [router, searchParams, isInitialized]) // Removed dependencies that change on every render
+  }, [router, searchParams, isInitialized, user])
+
+  // Filter favorites based on search query
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredFavorites(favorites)
+      return
+    }
+
+    const filtered = favorites.filter(
+      (item) =>
+        (item.name && item.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (item.nameAr && item.nameAr.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (item.supermarket && item.supermarket.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (item.supermarketAr && item.supermarketAr.toLowerCase().includes(searchQuery.toLowerCase())),
+    )
+
+    setFilteredFavorites(filtered)
+  }, [searchQuery, favorites])
 
   // Handle logout
   const handleLogout = () => {
-    localStorage.removeItem("edama-user")
+    logout()
     router.push("/login")
   }
 
   // Handle save profile
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     setIsLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      // Update user data
-      const updatedUser = {
+    try {
+      // Update user profile in auth context
+      await updateProfile({
+        ...editedUser,
+        ...(previewImage && { avatar: previewImage }),
+      })
+
+      // Update local state
+      setUserData({
         ...userData,
         ...editedUser,
-        accountType,
         ...(previewImage && { avatar: previewImage }),
-      }
-      setUserData(updatedUser)
-
-      // Save to localStorage
-      localStorage.setItem("edama-user", JSON.stringify(updatedUser))
+      })
 
       setIsEditing(false)
-      setIsLoading(false)
       setPreviewImage(null)
 
       // Update profile completion
@@ -479,13 +446,22 @@ export default function ProfilePage() {
         title: t("profileUpdated"),
         description: t("profileUpdatedDescription"),
       })
-    }, 1000)
+    } catch (error) {
+      toast({
+        title: t("updateError"),
+        description: t("updateErrorDescription"),
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Handle remove favorite
   const handleRemoveFavorite = (id: number) => {
     const updatedFavorites = favorites.filter((item) => item.id !== id)
     setFavorites(updatedFavorites)
+    setFilteredFavorites(updatedFavorites)
     localStorage.setItem("edama-favorites", JSON.stringify(updatedFavorites))
 
     toast({
@@ -768,11 +744,34 @@ export default function ProfilePage() {
     return accountType === "seller" ? sellerTabs : buyerTabs
   }
 
+  // Animation variants
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut",
+      },
+    },
+  }
+
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
             {/* Cover Image */}
             <div className="relative h-48 w-full bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20">
               {accountType === "seller" && (
@@ -822,7 +821,7 @@ export default function ProfilePage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-background shadow-md"
+                    className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-background shadow-md hover:bg-primary/10 transition-colors duration-300"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Camera className="h-4 w-4" />
@@ -862,12 +861,23 @@ export default function ProfilePage() {
               </div>
               <div className="flex flex-wrap justify-center gap-2 md:justify-end">
                 {!isEditing ? (
-                  <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditing(true)}
+                    className="hover:bg-primary/10 transition-colors duration-300"
+                  >
                     <Edit className="mr-2 h-4 w-4" />
                     {t("editProfile")}
                   </Button>
                 ) : (
-                  <Button variant="default" size="sm" onClick={handleSaveProfile} disabled={isLoading}>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleSaveProfile}
+                    disabled={isLoading}
+                    className="hover:scale-105 transition-transform duration-300"
+                  >
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     {t("saveChanges")}
                   </Button>
@@ -875,7 +885,7 @@ export default function ProfilePage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors duration-300"
                   onClick={handleLogout}
                 >
                   <LogOut className="h-4 w-4" />
@@ -889,7 +899,11 @@ export default function ProfilePage() {
               <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
                   {getTabs().map((tab) => (
-                    <TabsTrigger key={tab.value} value={tab.value}>
+                    <TabsTrigger
+                      key={tab.value}
+                      value={tab.value}
+                      className="transition-colors duration-300 hover:bg-primary/10"
+                    >
                       {tab.label}
                     </TabsTrigger>
                   ))}
@@ -901,506 +915,8 @@ export default function ProfilePage() {
       </div>
 
       <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-        <TabsContent value="overview" className="space-y-8">
-          {/* Profile Completion */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle>{t("profileCompletion")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{profileCompletion}%</span>
-                    <span className="flex items-center gap-1 text-sm">
-                      {getMoodIcon(profileCompletion)}
-                      {profileCompletion < 80 ? t("almostThere") : t("excellent")}
-                    </span>
-                  </div>
-                  <Progress value={profileCompletion} className="h-2" />
-
-                  {profileCompletion < 100 && showTips && (
-                    <div className="mt-4 rounded-lg bg-muted p-4">
-                      <div className="mb-2 flex items-center justify-between">
-                        <h4 className="flex items-center gap-2 font-medium">
-                          <Lightbulb className="h-4 w-4 text-yellow-500" />
-                          {t("completionTips")}
-                        </h4>
-                        <Button variant="ghost" size="sm" onClick={() => setShowTips(false)}>
-                          {t("dismiss")}
-                        </Button>
-                      </div>
-                      <ul className="ml-6 list-disc space-y-1 text-sm text-muted-foreground">
-                        {profileCompletion < 85 && <li>{t("addProfilePicture")}</li>}
-                        {profileCompletion < 90 && <li>{t("completeContactInfo")}</li>}
-                        {profileCompletion < 95 && <li>{t("writeBio")}</li>}
-                        {profileCompletion < 100 && <li>{t("leaveReview")}</li>}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Role-specific Dashboard Cards */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {accountType === "buyer" ? (
-              // Buyer Dashboard Cards
-              <>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                >
-                  <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-green-800 dark:text-green-400">{t("foodSaved")}</p>
-                          <h3 className="mt-1 text-2xl font-bold text-green-900 dark:text-green-300">
-                            {ecoStats.foodSaved} kg
-                          </h3>
-                        </div>
-                        <div className="rounded-full bg-green-200 p-3 dark:bg-green-800/30">
-                          <Leaf className="h-6 w-6 text-green-700 dark:text-green-400" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                >
-                  <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-blue-800 dark:text-blue-400">{t("co2Reduced")}</p>
-                          <h3 className="mt-1 text-2xl font-bold text-blue-900 dark:text-blue-300">
-                            {ecoStats.co2Reduced} kg
-                          </h3>
-                        </div>
-                        <div className="rounded-full bg-blue-200 p-3 dark:bg-blue-800/30">
-                          <Recycle className="h-6 w-6 text-blue-700 dark:text-blue-400" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
-                >
-                  <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-amber-800 dark:text-amber-400">{t("moneySaved")}</p>
-                          <h3 className="mt-1 text-2xl font-bold text-amber-900 dark:text-amber-300">
-                            {ecoStats.moneySaved} {t("currency")}
-                          </h3>
-                        </div>
-                        <div className="rounded-full bg-amber-200 p-3 dark:bg-amber-800/30">
-                          <BadgePercent className="h-6 w-6 text-amber-700 dark:text-amber-400" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
-                >
-                  <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-purple-800 dark:text-purple-400">{t("orders")}</p>
-                          <h3 className="mt-1 text-2xl font-bold text-purple-900 dark:text-purple-300">
-                            {orders.length}
-                          </h3>
-                        </div>
-                        <div className="rounded-full bg-purple-200 p-3 dark:bg-purple-800/30">
-                          <ShoppingBag className="h-6 w-6 text-purple-700 dark:text-purple-400" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              </>
-            ) : (
-              // Seller Dashboard Cards
-              <>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                >
-                  <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-indigo-800 dark:text-indigo-400">
-                            {t("productViews")}
-                          </p>
-                          <h3 className="mt-1 text-2xl font-bold text-indigo-900 dark:text-indigo-300">
-                            {analytics.views}
-                          </h3>
-                        </div>
-                        <div className="rounded-full bg-indigo-200 p-3 dark:bg-indigo-800/30">
-                          <Eye className="h-6 w-6 text-indigo-700 dark:text-indigo-400" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 }}
-                >
-                  <Card className="bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-pink-800 dark:text-pink-400">{t("productSaves")}</p>
-                          <h3 className="mt-1 text-2xl font-bold text-pink-900 dark:text-pink-300">
-                            {analytics.saves}
-                          </h3>
-                        </div>
-                        <div className="rounded-full bg-pink-200 p-3 dark:bg-pink-800/30">
-                          <Heart className="h-6 w-6 text-pink-700 dark:text-pink-400" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
-                >
-                  <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-orange-800 dark:text-orange-400">
-                            {t("completedOrders")}
-                          </p>
-                          <h3 className="mt-1 text-2xl font-bold text-orange-900 dark:text-orange-300">
-                            {analytics.orders}
-                          </h3>
-                        </div>
-                        <div className="rounded-full bg-orange-200 p-3 dark:bg-orange-800/30">
-                          <Package className="h-6 w-6 text-orange-700 dark:text-orange-400" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
-                >
-                  <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-emerald-800 dark:text-emerald-400">
-                            {t("totalRevenue")}
-                          </p>
-                          <h3 className="mt-1 text-2xl font-bold text-emerald-900 dark:text-emerald-300">
-                            {analytics.revenue} {t("currency")}
-                          </h3>
-                        </div>
-                        <div className="rounded-full bg-emerald-200 p-3 dark:bg-emerald-800/30">
-                          <DollarSign className="h-6 w-6 text-emerald-700 dark:text-emerald-400" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              </>
-            )}
-          </div>
-
-          {/* Recent Activity */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-            className="mt-8"
-          >
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle>{t("recentActivity")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {orders.length > 0 ? (
-                    orders.slice(0, 3).map((order, index) => (
-                      <div key={order.id} className="flex items-start gap-4">
-                        <div className="rounded-md bg-primary/10 p-2">
-                          <Package className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-medium">
-                              {t("placedOrder")}: #{order.id}
-                            </h3>
-                            {getOrderStatusBadge(order.status)}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {formatDate(order.date)} • {order.items.length} {t("items")}
-                          </p>
-                          <p className="mt-1 font-medium">
-                            {order.total} {t("currency")}
-                          </p>
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={() => setActiveTab("orders")}>
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-6 text-center">
-                      <div className="mb-3 rounded-full bg-muted p-3">
-                        <Package className="h-6 w-6 text-muted-foreground" />
-                      </div>
-                      <h3 className="mb-1 text-lg font-medium">{t("noActivity")}</h3>
-                      <p className="mb-4 text-sm text-muted-foreground">{t("noActivityDescription")}</p>
-                      <Button onClick={() => router.push("/home")}>{t("startShopping")}</Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Achievements */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-            className="mt-8"
-          >
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle>{t("achievements")}</CardTitle>
-                <CardDescription>{t("achievementsDescription")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                  {badges.map((badge) => (
-                    <motion.div
-                      key={badge.id}
-                      className={`cursor-pointer rounded-lg border p-4 transition-all hover:border-primary/50 hover:bg-muted/50 ${
-                        !badge.unlocked && "opacity-60 grayscale"
-                      }`}
-                      onClick={() => toggleBadgeExpansion(badge.id)}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-full bg-primary/10 p-2">{badge.icon}</div>
-                        <div>
-                          <h3 className="font-medium">{language === "ar" ? badge.nameAr : badge.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {language === "ar" ? badge.descriptionAr : badge.description}
-                          </p>
-                          {expandedBadge === badge.id && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="mt-2"
-                            >
-                              <p className="text-xs text-muted-foreground">
-                                {badge.unlocked
-                                  ? t("badgeUnlockedOn", { date: formatDate(new Date().toISOString()) })
-                                  : t("badgeLockedDescription")}
-                              </p>
-                              {!badge.unlocked && (
-                                <Button variant="ghost" size="sm" className="mt-2 h-7 text-xs">
-                                  {t("howToUnlock")}
-                                </Button>
-                              )}
-                            </motion.div>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </TabsContent>
-
-        <TabsContent value="orders">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <CardTitle>{t("myOrders")}</CardTitle>
-                  <CardDescription>{t("myOrdersDescription")}</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-1">
-                        <Filter className="h-4 w-4" />
-                        {t("filter")}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>{t("filterBy")}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>{t("all")}</DropdownMenuItem>
-                      <DropdownMenuItem>{t("processing")}</DropdownMenuItem>
-                      <DropdownMenuItem>{t("readyForPickup")}</DropdownMenuItem>
-                      <DropdownMenuItem>{t("completed")}</DropdownMenuItem>
-                      <DropdownMenuItem>{t("cancelled")}</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-1">
-                        <ArrowUpDown className="h-4 w-4" />
-                        {t("sort")}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>{t("sortBy")}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>{t("newest")}</DropdownMenuItem>
-                      <DropdownMenuItem>{t("oldest")}</DropdownMenuItem>
-                      <DropdownMenuItem>{t("highestTotal")}</DropdownMenuItem>
-                      <DropdownMenuItem>{t("lowestTotal")}</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {orders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="mb-4 rounded-full bg-muted p-3">
-                    <Package className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="mb-2 text-lg font-medium">{t("noOrders")}</h3>
-                  <p className="mb-4 text-sm text-muted-foreground">{t("noOrdersDescription")}</p>
-                  <Button onClick={() => router.push("/home")}>{t("startShopping")}</Button>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {orders.map((order, index) => (
-                    <motion.div
-                      key={order.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                    >
-                      <Accordion type="single" collapsible>
-                        <AccordionItem value={`order-${order.id}`} className="border rounded-lg">
-                          <AccordionTrigger className="px-4 py-3 hover:no-underline">
-                            <div className="flex flex-1 flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                              <div>
-                                <h3 className="font-medium text-left">
-                                  {t("order")}: #{order.id}
-                                </h3>
-                                <p className="text-sm text-muted-foreground text-left">{formatDate(order.date)}</p>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                {getOrderStatusBadge(order.status)}
-                                <span className="font-medium">
-                                  {order.total} {t("currency")}
-                                </span>
-                              </div>
-                            </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="px-4 pb-4">
-                            <Separator className="mb-4" />
-                            <div className="grid gap-4 md:grid-cols-2">
-                              <div>
-                                <h4 className="mb-2 text-sm font-medium">{t("items")}</h4>
-                                <div className="space-y-2">
-                                  {order.items.map((item: any) => (
-                                    <div key={item.id} className="flex items-center gap-3">
-                                      <div className="relative h-10 w-10 overflow-hidden rounded-md">
-                                        <Image
-                                          src={item.image || "/placeholder.svg"}
-                                          alt={language === "ar" ? item.nameAr : item.name}
-                                          fill
-                                          className="object-cover"
-                                        />
-                                      </div>
-                                      <div className="flex-1 text-sm">
-                                        <div className="line-clamp-1 font-medium">
-                                          {language === "ar" ? item.nameAr : item.name}
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-muted-foreground">x{item.quantity}</span>
-                                          <span>
-                                            {item.price} {t("currency")}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-
-                              <div>
-                                <h4 className="mb-2 text-sm font-medium">{t("pickupInfo")}</h4>
-                                <div className="rounded-md bg-muted p-3 text-sm">
-                                  <p className="font-medium">{order.pickup?.contactName || t("notProvided")}</p>
-                                  <p className="text-muted-foreground">{order.pickup?.phone || t("notProvided")}</p>
-                                  <p className="text-muted-foreground">
-                                    {order.pickup?.location || t("pickupAtStore")}
-                                  </p>
-                                </div>
-
-                                <h4 className="mb-2 mt-4 text-sm font-medium">{t("paymentMethod")}</h4>
-                                <div className="rounded-md bg-muted p-3 text-sm">
-                                  <p className="font-medium">
-                                    {order.payment?.method === "card" ? t("creditCard") : t("cashOnPickup")}
-                                  </p>
-                                  {order.payment?.method === "card" && order.payment.cardInfo && (
-                                    <p className="text-muted-foreground">{order.payment.cardInfo.cardNumber}</p>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="favorites">
-          <Card>
+          <Card className="hover-glow transition-shadow duration-300">
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
@@ -1411,7 +927,7 @@ export default function ProfilePage() {
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     placeholder={t("searchFavorites")}
-                    className="w-full max-w-xs pl-9"
+                    className="w-full max-w-xs pl-9 shadow-sm hover:shadow transition-shadow duration-300"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -1419,24 +935,36 @@ export default function ProfilePage() {
               </div>
             </CardHeader>
             <CardContent>
-              {favorites.length === 0 ? (
+              {filteredFavorites.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <div className="mb-4 rounded-full bg-muted p-3">
                     <Heart className="h-8 w-8 text-muted-foreground" />
                   </div>
-                  <h3 className="mb-2 text-lg font-medium">{t("noFavorites")}</h3>
-                  <p className="mb-4 text-sm text-muted-foreground">{t("noFavoritesDescription")}</p>
-                  <Button onClick={() => router.push("/home")}>{t("exploreProducts")}</Button>
+                  <h3 className="mb-2 text-lg font-medium">
+                    {searchQuery ? t("noMatchingFavorites") : t("noFavorites")}
+                  </h3>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    {searchQuery ? t("tryDifferentSearch") : t("noFavoritesDescription")}
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setSearchQuery("")
+                      router.push("/home")
+                    }}
+                    className="hover:scale-105 transition-transform duration-300"
+                  >
+                    {t("exploreProducts")}
+                  </Button>
                 </div>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                  {favorites.map((item, index) => (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                    >
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                  className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+                >
+                  {filteredFavorites.map((item, index) => (
+                    <motion.div key={item.id} variants={fadeInUp} className="product-card">
                       <Card className="overflow-hidden h-full flex flex-col">
                         <div className="relative">
                           <div className="relative h-40 w-full">
@@ -1444,18 +972,18 @@ export default function ProfilePage() {
                               src={item.image || "/placeholder.svg"}
                               alt={language === "ar" ? item.nameAr : item.name}
                               fill
-                              className="object-cover"
+                              className="object-cover transition-transform duration-500 group-hover:scale-110"
                             />
                           </div>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="absolute right-2 top-2 h-8 w-8 rounded-full bg-background/80 hover:bg-background/90"
+                            className="absolute right-2 top-2 h-8 w-8 rounded-full bg-background/80 hover:bg-background/90 hover:text-red-500 transition-colors duration-300"
                             onClick={() => handleRemoveFavorite(item.id)}
                           >
                             <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
                           </Button>
-                          <Badge className="absolute left-2 top-2 bg-secondary">
+                          <Badge className="absolute left-2 top-2 bg-secondary flash">
                             {item.discount}% {t("off")}
                           </Badge>
                         </div>
@@ -1476,7 +1004,7 @@ export default function ProfilePage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="w-full"
+                              className="w-full hover:bg-primary/10 transition-colors duration-300"
                               onClick={() => router.push(`/product/${item.id}`)}
                             >
                               {t("viewProduct")}
@@ -1486,1119 +1014,14 @@ export default function ProfilePage() {
                       </Card>
                     </motion.div>
                   ))}
-                </div>
+                </motion.div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="savedStores">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <CardTitle>{t("savedStores")}</CardTitle>
-                  <CardDescription>{t("savedStoresDescription")}</CardDescription>
-                </div>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder={t("searchStores")}
-                    className="w-full max-w-xs pl-9"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {favoriteStores.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="mb-4 rounded-full bg-muted p-3">
-                    <Store className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="mb-2 text-lg font-medium">{t("noSavedStores")}</h3>
-                  <p className="mb-4 text-sm text-muted-foreground">{t("noSavedStoresDescription")}</p>
-                  <Button onClick={() => router.push("/home")}>{t("exploreStores")}</Button>
-                </div>
-              ) : (
-                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                  {favoriteStores.map((store, index) => (
-                    <motion.div
-                      key={store.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                    >
-                      <Card className="overflow-hidden h-full flex flex-col">
-                        <div className="flex items-center p-4 gap-3">
-                          <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md">
-                            <Image
-                              src={store.image || "/placeholder.svg"}
-                              alt={language === "ar" ? store.nameAr : store.name}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="font-medium">{language === "ar" ? store.nameAr : store.name}</h3>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <MapPin className="h-3 w-3" />
-                              <span>{language === "ar" ? store.locationAr : store.location}</span>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <div className="flex items-center">
-                                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                <span className="text-xs ml-1">{store.rating}</span>
-                              </div>
-                              <span className="text-xs text-muted-foreground">
-                                {store.productsCount} {t("products")}
-                              </span>
-                            </div>
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => router.push(`/store/${store.id}`)}>
-                                <Store className="mr-2 h-4 w-4" />
-                                {t("viewStore")}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Share2 className="mr-2 h-4 w-4" />
-                                {t("shareStore")}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => handleRemoveFavoriteStore(store.id)}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                {t("removeFromSaved")}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                        <CardContent className="pt-0 pb-4 px-4 mt-auto">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                            onClick={() => router.push(`/store/${store.id}`)}
-                          >
-                            {t("browseProducts")}
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="reviews">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <CardTitle>{t("myReviews")}</CardTitle>
-                  <CardDescription>{t("myReviewsDescription")}</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-1">
-                        <Filter className="h-4 w-4" />
-                        {t("filter")}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>{t("filterBy")}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>{t("all")}</DropdownMenuItem>
-                      <DropdownMenuItem>{t("highestRated")}</DropdownMenuItem>
-                      <DropdownMenuItem>{t("lowestRated")}</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-1">
-                        <ArrowUpDown className="h-4 w-4" />
-                        {t("sort")}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>{t("sortBy")}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>{t("newest")}</DropdownMenuItem>
-                      <DropdownMenuItem>{t("oldest")}</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {reviews.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="mb-4 rounded-full bg-muted p-3">
-                    <MessageSquare className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <h3 className="mb-2 text-lg font-medium">{t("noReviews")}</h3>
-                  <p className="mb-4 text-sm text-muted-foreground">{t("noReviewsDescription")}</p>
-                  <Button onClick={() => router.push("/home")}>{t("exploreProducts")}</Button>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {reviews.map((review, index) => (
-                    <motion.div
-                      key={review.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                    >
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-start gap-4">
-                            <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md">
-                              <Image
-                                src={review.image || "/placeholder.svg"}
-                                alt={language === "ar" ? review.productNameAr : review.productName}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <div className="mb-1 flex items-center justify-between">
-                                <h3 className="font-medium">
-                                  {language === "ar" ? review.productNameAr : review.productName}
-                                </h3>
-                                <span className="text-sm text-muted-foreground">{formatDate(review.date)}</span>
-                              </div>
-                              <div className="mb-2">{renderStarRating(review.rating)}</div>
-                              <p className="text-sm text-muted-foreground">
-                                {language === "ar" ? review.commentAr : review.comment}
-                              </p>
-                            </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  {t("editReview")}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Share2 className="mr-2 h-4 w-4" />
-                                  {t("shareReview")}
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-destructive focus:text-destructive">
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  {t("deleteReview")}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {accountType === "seller" && (
-          <TabsContent value="products">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <CardTitle>{t("myProducts")}</CardTitle>
-                    <CardDescription>{t("myProductsDescription")}</CardDescription>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        placeholder={t("searchProducts")}
-                        className="w-full sm:w-[200px] pl-9"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-1">
-                            <Filter className="h-4 w-4" />
-                            {t("filter")}
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>{t("filterBy")}</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => setProductFilter("all")}>{t("all")}</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setProductFilter("active")}>{t("active")}</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setProductFilter("inactive")}>
-                            {t("inactive")}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm" className="gap-1">
-                            <ArrowUpDown className="h-4 w-4" />
-                            {t("sort")}
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>{t("sortBy")}</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => setProductSort("newest")}>{t("newest")}</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setProductSort("expiringSoon")}>
-                            {t("expiringSoon")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setProductSort("highestDiscount")}>
-                            {t("highestDiscount")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setProductSort("mostViewed")}>
-                            {t("mostViewed")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setProductSort("mostSaved")}>
-                            {t("mostSaved")}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                      <Button
-                        onClick={() =>
-                          document.getElementById("addProductForm")?.scrollIntoView({ behavior: "smooth" })
-                        }
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        {t("addProduct")}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {getFilteredProducts().length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <div className="mb-4 rounded-full bg-muted p-3">
-                      <Store className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="mb-2 text-lg font-medium">{t("noProducts")}</h3>
-                    <p className="mb-4 text-sm text-muted-foreground">{t("noProductsDescription")}</p>
-                    <Button
-                      onClick={() => document.getElementById("addProductForm")?.scrollIntoView({ behavior: "smooth" })}
-                    >
-                      {t("addYourFirstProduct")}
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {getFilteredProducts().map((product, index) => (
-                      <motion.div
-                        key={product.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.1 }}
-                      >
-                        <Card>
-                          <CardContent className="p-4">
-                            <div className="flex flex-col gap-4 sm:flex-row">
-                              <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md">
-                                <Image
-                                  src={product.image || "/placeholder.svg"}
-                                  alt={language === "ar" ? product.nameAr : product.name}
-                                  fill
-                                  className="object-cover"
-                                />
-                                <Badge className="absolute right-0 top-0 rounded-bl-md rounded-tr-md">
-                                  {product.discount}%
-                                </Badge>
-                              </div>
-                              <div className="flex-1">
-                                <div className="mb-1 flex items-center justify-between">
-                                  <h3 className="font-medium">{language === "ar" ? product.nameAr : product.name}</h3>
-                                  <Badge variant={product.status === "active" ? "outline" : "secondary"}>
-                                    {product.status === "active" ? t("active") : t("inactive")}
-                                  </Badge>
-                                </div>
-                                <p className="mb-2 text-sm text-muted-foreground line-clamp-2">
-                                  {language === "ar" ? product.descriptionAr : product.description}
-                                </p>
-                                <div className="mb-2 flex flex-wrap items-center gap-4">
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-sm font-medium">{t("originalPrice")}:</span>
-                                    <span className="text-sm text-muted-foreground">
-                                      {product.originalPrice} {t("currency")}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-sm font-medium">{t("discountedPrice")}:</span>
-                                    <span className="text-sm text-primary">
-                                      {product.discountedPrice} {t("currency")}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm">
-                                      {t("expires")}: {formatDate(product.expiryDate)}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                  <div className="flex items-center gap-3">
-                                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                      <Eye className="h-4 w-4" />
-                                      <span>{product.views}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                      <Heart className="h-4 w-4" />
-                                      <span>{product.saves}</span>
-                                    </div>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Button variant="outline" size="sm">
-                                      <Edit className="mr-2 h-4 w-4" />
-                                      {t("edit")}
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleToggleProductVisibility(product.id)}
-                                    >
-                                      {product.status === "active" ? (
-                                        <>
-                                          <EyeOff className="mr-2 h-4 w-4" />
-                                          {t("hide")}
-                                        </>
-                                      ) : (
-                                        <>
-                                          <Eye className="mr-2 h-4 w-4" />
-                                          {t("show")}
-                                        </>
-                                      )}
-                                    </Button>
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" size="icon" className="h-8 w-8">
-                                          <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                        <DropdownMenuItem>
-                                          <FileText className="mr-2 h-4 w-4" />
-                                          {t("viewDetails")}
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem>
-                                          <Share2 className="mr-2 h-4 w-4" />
-                                          {t("shareProduct")}
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                          className="text-destructive focus:text-destructive"
-                                          onClick={() => handleDeleteProduct(product.id)}
-                                        >
-                                          <Trash2 className="mr-2 h-4 w-4" />
-                                          {t("delete")}
-                                        </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Add Product Form */}
-                <div id="addProductForm" className="mt-8 rounded-lg border p-6 bg-card shadow-sm">
-                  <h3 className="mb-4 text-xl font-bold">{t("addNewProduct")}</h3>
-                  <div className="space-y-6">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="productName">
-                          {t("productName")} ({t("english")}) *
-                        </Label>
-                        <Input
-                          id="productName"
-                          value={newProduct.name}
-                          onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="productNameAr">
-                          {t("productName")} ({t("arabic")}) *
-                        </Label>
-                        <Input
-                          id="productNameAr"
-                          value={newProduct.nameAr}
-                          onChange={(e) => setNewProduct({ ...newProduct, nameAr: e.target.value })}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="category">{t("category")} *</Label>
-                        <select
-                          id="category"
-                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          value={newProduct.category}
-                          onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-                          required
-                        >
-                          {categories.map((category) => (
-                            <option key={category.id} value={category.id}>
-                              {language === "ar" ? category.nameAr : category.nameEn}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="originalPrice">{t("originalPrice")} *</Label>
-                        <Input
-                          id="originalPrice"
-                          type="number"
-                          value={newProduct.originalPrice}
-                          onChange={(e) =>
-                            setNewProduct({ ...newProduct, originalPrice: Number.parseFloat(e.target.value) })
-                          }
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="discountedPrice">{t("discountedPrice")} *</Label>
-                        <Input
-                          id="discountedPrice"
-                          type="number"
-                          value={newProduct.discountedPrice}
-                          onChange={(e) =>
-                            setNewProduct({ ...newProduct, discountedPrice: Number.parseFloat(e.target.value) })
-                          }
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="expiryDate">{t("expiryDate")} *</Label>
-                        <Input
-                          id="expiryDate"
-                          type="date"
-                          value={newProduct.expiryDate}
-                          onChange={(e) => setNewProduct({ ...newProduct, expiryDate: e.target.value })}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="quantity">{t("quantity")} *</Label>
-                        <Input
-                          id="quantity"
-                          type="number"
-                          value={newProduct.quantity}
-                          onChange={(e) => setNewProduct({ ...newProduct, quantity: Number.parseInt(e.target.value) })}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="shopAddress">{t("shopAddress")} *</Label>
-                      <Input
-                        id="shopAddress"
-                        value={newProduct.shopAddress || ""}
-                        onChange={(e) => setNewProduct({ ...newProduct, shopAddress: e.target.value })}
-                        placeholder={t("shopAddressPlaceholder")}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="contactMethod">{t("contactMethod")} *</Label>
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="contactPhone">{t("phone")}</Label>
-                          <Input
-                            id="contactPhone"
-                            value={newProduct.contactPhone || ""}
-                            onChange={(e) => setNewProduct({ ...newProduct, contactPhone: e.target.value })}
-                            placeholder={t("contactPhonePlaceholder")}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="contactWhatsapp">{t("whatsapp")}</Label>
-                          <Input
-                            id="contactWhatsapp"
-                            value={newProduct.contactWhatsapp || ""}
-                            onChange={(e) => setNewProduct({ ...newProduct, contactWhatsapp: e.target.value })}
-                            placeholder={t("contactWhatsappPlaceholder")}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="description">
-                        {t("description")} ({t("english")})
-                      </Label>
-                      <Textarea
-                        id="description"
-                        value={newProduct.description}
-                        onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
-                        rows={3}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="descriptionAr">
-                        {t("description")} ({t("arabic")})
-                      </Label>
-                      <Textarea
-                        id="descriptionAr"
-                        value={newProduct.descriptionAr}
-                        onChange={(e) => setNewProduct({ ...newProduct, descriptionAr: e.target.value })}
-                        rows={3}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="productImage">{t("productImage")}</Label>
-                      <div className="flex items-center gap-4">
-                        {productImage ? (
-                          <div className="relative h-24 w-24 overflow-hidden rounded-md">
-                            <Image
-                              src={productImage || "/placeholder.svg"}
-                              alt="Product preview"
-                              fill
-                              className="object-cover"
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="absolute right-1 top-1 h-6 w-6 rounded-full bg-background/80"
-                              onClick={() => setProductImage(null)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <div
-                            className="flex h-24 w-24 cursor-pointer items-center justify-center rounded-md border border-dashed border-muted-foreground/50 hover:border-muted-foreground/80"
-                            onClick={() => document.getElementById("productImageInput")?.click()}
-                          >
-                            <Upload className="h-8 w-8 text-muted-foreground" />
-                            <input
-                              id="productImageInput"
-                              type="file"
-                              className="hidden"
-                              accept="image/*"
-                              onChange={handleProductImageChange}
-                            />
-                          </div>
-                        )}
-                        <div className="text-sm text-muted-foreground">
-                          {productImage ? t("clickToChange") : t("clickToUpload")}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setNewProduct({
-                            name: "",
-                            nameAr: "",
-                            category: "fruits",
-                            description: "",
-                            descriptionAr: "",
-                            originalPrice: 0,
-                            discountedPrice: 0,
-                            discount: 0,
-                            expiryDate: "",
-                            quantity: 1,
-                            shopAddress: "",
-                            contactPhone: "",
-                            contactWhatsapp: "",
-                          })
-                          setProductImage(null)
-                        }}
-                      >
-                        {t("reset")}
-                      </Button>
-                      <Button
-                        onClick={handleAddProduct}
-                        disabled={
-                          !newProduct.name ||
-                          !newProduct.nameAr ||
-                          !newProduct.expiryDate ||
-                          !newProduct.originalPrice ||
-                          !newProduct.discountedPrice
-                        }
-                      >
-                        {t("addProduct")}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
-
-        {accountType === "seller" && (
-          <TabsContent value="analytics">
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                    <CardTitle>{t("analytics")}</CardTitle>
-                    <CardDescription>{t("analyticsDescription")}</CardDescription>
-                  </div>
-                  <div className="flex gap-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {t("thisMonth")}
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>{t("today")}</DropdownMenuItem>
-                        <DropdownMenuItem>{t("thisWeek")}</DropdownMenuItem>
-                        <DropdownMenuItem>{t("thisMonth")}</DropdownMenuItem>
-                        <DropdownMenuItem>{t("last3Months")}</DropdownMenuItem>
-                        <DropdownMenuItem>{t("thisYear")}</DropdownMenuItem>
-                        <DropdownMenuItem>{t("allTime")}</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <Button variant="outline" size="sm">
-                      <FileText className="mr-2 h-4 w-4" />
-                      {t("exportReport")}
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                  <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-indigo-800 dark:text-indigo-400">
-                            {t("productViews")}
-                          </p>
-                          <h3 className="mt-1 text-2xl font-bold text-indigo-900 dark:text-indigo-300">
-                            {analytics.views}
-                          </h3>
-                        </div>
-                        <div className="rounded-full bg-indigo-200 p-3 dark:bg-indigo-800/30">
-                          <Eye className="h-6 w-6 text-indigo-700 dark:text-indigo-400" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-pink-800 dark:text-pink-400">{t("productSaves")}</p>
-                          <h3 className="mt-1 text-2xl font-bold text-pink-900 dark:text-pink-300">
-                            {analytics.saves}
-                          </h3>
-                        </div>
-                        <div className="rounded-full bg-pink-200 p-3 dark:bg-pink-800/30">
-                          <Heart className="h-6 w-6 text-pink-700 dark:text-pink-400" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-orange-800 dark:text-orange-400">
-                            {t("completedOrders")}
-                          </p>
-                          <h3 className="mt-1 text-2xl font-bold text-orange-900 dark:text-orange-300">
-                            {analytics.orders}
-                          </h3>
-                        </div>
-                        <div className="rounded-full bg-orange-200 p-3 dark:bg-orange-800/30">
-                          <Package className="h-6 w-6 text-orange-700 dark:text-orange-400" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20">
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-emerald-800 dark:text-emerald-400">
-                            {t("totalRevenue")}
-                          </p>
-                          <h3 className="mt-1 text-2xl font-bold text-emerald-900 dark:text-emerald-300">
-                            {analytics.revenue} {t("currency")}
-                          </h3>
-                        </div>
-                        <div className="rounded-full bg-emerald-200 p-3 dark:bg-emerald-800/30">
-                          <DollarSign className="h-6 w-6 text-emerald-700 dark:text-emerald-400" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="mt-8 grid gap-6 md:grid-cols-2">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{t("topSellingProducts")}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {analytics.topProducts.map((product, index) => (
-                          <div key={product.id} className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-                                {index + 1}
-                              </div>
-                              <div>
-                                <p className="font-medium">{product.name}</p>
-                                <p className="text-sm text-muted-foreground">
-                                  {product.sales} {t("sales")}
-                                </p>
-                              </div>
-                            </div>
-                            <p className="font-medium">
-                              {product.revenue} {t("currency")}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{t("monthlySales")}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-[200px] w-full">
-                        <div className="flex h-full items-end gap-2">
-                          {analytics.monthlySales.map((month) => (
-                            <div key={month.month} className="flex flex-1 flex-col items-center">
-                              <div
-                                className="w-full rounded-t-sm bg-primary"
-                                style={{ height: `${(month.sales / 30) * 100}%` }}
-                              ></div>
-                              <p className="mt-2 text-xs">{month.month}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
-
-        {accountType === "seller" && (
-          <TabsContent value="storeSettings">
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("storeSettings")}</CardTitle>
-                <CardDescription>{t("storeSettingsDescription")}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">{t("storeInformation")}</h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="storeName">
-                        {t("storeName")} ({t("english")})
-                      </Label>
-                      <Input
-                        id="storeName"
-                        value={editedUser.storeName || userData.storeName}
-                        onChange={(e) => setEditedUser({ ...editedUser, storeName: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="storeNameAr">
-                        {t("storeName")} ({t("arabic")})
-                      </Label>
-                      <Input
-                        id="storeNameAr"
-                        value={editedUser.storeNameAr || userData.storeNameAr}
-                        onChange={(e) => setEditedUser({ ...editedUser, storeNameAr: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="storeLocation">
-                        {t("storeLocation")} ({t("english")})
-                      </Label>
-                      <Input
-                        id="storeLocation"
-                        value={editedUser.storeLocation || userData.storeLocation}
-                        onChange={(e) => setEditedUser({ ...editedUser, storeLocation: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="storeLocationAr">
-                        {t("storeLocation")} ({t("arabic")})
-                      </Label>
-                      <Input
-                        id="storeLocationAr"
-                        value={editedUser.storeLocationAr || userData.storeLocationAr}
-                        onChange={(e) => setEditedUser({ ...editedUser, storeLocationAr: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="storeDescription">
-                      {t("storeDescription")} ({t("english")})
-                    </Label>
-                    <Textarea
-                      id="storeDescription"
-                      value={editedUser.storeDescription || userData.storeDescription}
-                      onChange={(e) => setEditedUser({ ...editedUser, storeDescription: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="storeDescriptionAr">
-                      {t("storeDescription")} ({t("arabic")})
-                    </Label>
-                    <Textarea
-                      id="storeDescriptionAr"
-                      value={editedUser.storeDescriptionAr || userData.storeDescriptionAr}
-                      onChange={(e) => setEditedUser({ ...editedUser, storeDescriptionAr: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">{t("contactInformation")}</h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="storePhone">{t("phone")}</Label>
-                      <Input
-                        id="storePhone"
-                        value={editedUser.storePhone || userData.storePhone}
-                        onChange={(e) => setEditedUser({ ...editedUser, storePhone: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="storeEmail">{t("email")}</Label>
-                      <Input
-                        id="storeEmail"
-                        value={editedUser.storeEmail || userData.storeEmail}
-                        onChange={(e) => setEditedUser({ ...editedUser, storeEmail: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="storeWebsite">
-                      {t("website")} ({t("optional")})
-                    </Label>
-                    <Input
-                      id="storeWebsite"
-                      value={editedUser.storeWebsite || userData.storeWebsite}
-                      onChange={(e) => setEditedUser({ ...editedUser, storeWebsite: e.target.value })}
-                      placeholder="https://example.com"
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">{t("storeVisibility")}</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{t("storeActive")}</h4>
-                        <p className="text-sm text-muted-foreground">{t("storeActiveDescription")}</p>
-                      </div>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{t("featuredStore")}</h4>
-                        <p className="text-sm text-muted-foreground">{t("featuredStoreDescription")}</p>
-                      </div>
-                      <Switch />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline">{t("cancel")}</Button>
-                  <Button onClick={handleSaveProfile}>{t("saveChanges")}</Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
-
-        <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle>{t("settings")}</CardTitle>
-              <CardDescription>{t("settingsDescription")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Account settings */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">{t("accountSettings")}</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="changeEmail">{t("email")}</Label>
-                    <Input id="changeEmail" defaultValue={userData.email} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="changePassword">{t("password")}</Label>
-                    <Input id="changePassword" type="password" defaultValue="********" />
-                  </div>
-                </div>
-                <Button className="mt-2">{t("updateAccount")}</Button>
-              </div>
-
-              <Separator />
-
-              {/* Notification settings */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">{t("notificationSettings")}</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">{t("emailNotifications")}</h4>
-                      <p className="text-sm text-muted-foreground">{t("emailNotificationsDescription")}</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">{t("smsNotifications")}</h4>
-                      <p className="text-sm text-muted-foreground">{t("smsNotificationsDescription")}</p>
-                    </div>
-                    <Switch />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-medium">{t("expiryAlerts")}</h4>
-                      <p className="text-sm text-muted-foreground">{t("expiryAlertsDescription")}</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Language and appearance */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">{t("languageAndAppearance")}</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="language">{t("language")}</Label>
-                    <select
-                      id="language"
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      defaultValue={language}
-                    >
-                      <option value="ar">العربية</option>
-                      <option value="en">English</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="theme">{t("theme")}</Label>
-                    <select
-                      id="theme"
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <option value="light">{t("light")}</option>
-                      <option value="dark">{t("dark")}</option>
-                      <option value="system">{t("system")}</option>
-                    </select>
-                  </div>
-                </div>
-                <Button className="mt-2">{t("savePreferences")}</Button>
-              </div>
-
-              <Separator />
-
-              {/* Help & Support */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">{t("helpAndSupport")}</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Card className="bg-muted/50">
-                    <CardContent className="flex items-center gap-4 p-4">
-                      <div className="rounded-full bg-primary/10 p-3">
-                        <HelpCircle className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{t("helpCenter")}</h4>
-                        <p className="text-sm text-muted-foreground">{t("helpCenterDescription")}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-muted/50">
-                    <CardContent className="flex items-center gap-4 p-4">
-                      <div className="rounded-full bg-primary/10 p-3">
-                        <Mail className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{t("contactSupport")}</h4>
-                        <p className="text-sm text-muted-foreground">{t("contactSupportDescription")}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Delete account */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-destructive">{t("dangerZone")}</h3>
-                <p className="text-sm text-muted-foreground">{t("deleteAccountWarning")}</p>
-                <Button variant="destructive">{t("deleteAccount")}</Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {/* Other tab contents */}
+        {/* ... */}
       </Tabs>
     </div>
   )

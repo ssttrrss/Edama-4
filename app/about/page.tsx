@@ -29,26 +29,26 @@ import {
 const teamMembers = [
   {
     name: "Mahmoud Ibrahim Mahmoud",
-    role: "Lead Developer",
+    role: "Lead Developer & QC",
     bio: "Passionate about creating sustainable technology solutions that make a positive impact on the environment.",
     image: "/placeholder.svg?height=300&width=300",
   },
   {
     name: "Hannah Elsayed",
     role: "Researcher",
-    bio: "نسيت كنت هكتب اي.",
+    bio: "Focused on transforming complex data into clear, actionable insights. With a methodical approach, she tackles challenging questions to drive innovation.",
     image: "/placeholder.svg?height=300&width=300",
   },
   {
-    name: "Saif Eldin",
-    role: "Leader",
+    name: "Seif El-Dein",
+    role: "Leader & QA",
     bio: "Focused on developing innovative strategies to reduce food waste and promote sustainable consumption patterns.",
     image: "/placeholder.svg?height=300&width=300",
   },
   {
     name: "Marwan Mamdouh",
-    role: "اخويا",
-    bio: "يكتب اللي هو عايزه.",
+    role: "Developer",
+    bio: "",
     image: "/placeholder.svg?height=300&width=300",
   },
 ]

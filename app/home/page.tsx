@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useTranslation } from "@/components/language-provider"
@@ -18,7 +18,6 @@ import { EcoImpactCalculator } from "@/components/eco-impact-calculator"
 import { products, categories } from "@/lib/data"
 import { Search, Filter, ChevronLeft, ChevronRight, ShoppingCart, Heart } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { ProfileShortcut } from "@/components/profile-shortcut"
 import { CountdownTimer } from "@/components/countdown-timer"
 
 export default function HomePage() {
@@ -70,7 +69,9 @@ export default function HomePage() {
           product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           product.nameAr.toLowerCase().includes(searchQuery.toLowerCase()) ||
           product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          product.descriptionAr.toLowerCase().includes(searchQuery.toLowerCase()),
+          product.descriptionAr.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.supermarket.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          product.supermarketAr.toLowerCase().includes(searchQuery.toLowerCase()),
       )
     }
 
@@ -88,13 +89,13 @@ export default function HomePage() {
   }, [searchQuery, priceRange, selectedCategory])
 
   // Carousel controls
-  const nextSlide = () => {
+  const nextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev === featuredProducts.length - 1 ? 0 : prev + 1))
-  }
+  }, [featuredProducts.length])
 
-  const prevSlide = () => {
+  const prevSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev === 0 ? featuredProducts.length - 1 : prev - 1))
-  }
+  }, [featuredProducts.length])
 
   // Auto-advance carousel
   useEffect(() => {
@@ -103,7 +104,7 @@ export default function HomePage() {
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [currentSlide])
+  }, [currentSlide, nextSlide])
 
   // Add to cart handler
   const handleAddToCart = (product: any) => {
@@ -159,13 +160,28 @@ export default function HomePage() {
     }
   }
 
-  // Calculate days until expiry
-  const getDaysUntilExpiry = (expiryDate: string) => {
-    const today = new Date()
-    const expiry = new Date(expiryDate)
-    const diffTime = expiry.getTime() - today.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 12,
+      },
+    },
   }
 
   return (
@@ -179,58 +195,39 @@ export default function HomePage() {
       >
         <div className="relative flex-1">
           <AnimatePresence>
-            {showSearch ? (
-              <motion.div
-                initial={{ opacity: 0, width: "50%" }}
-                animate={{ opacity: 1, width: "100%" }}
-                exit={{ opacity: 0, width: "50%" }}
-                transition={{ duration: 0.3 }}
-                className="relative w-full"
-              >
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  ref={searchInputRef}
-                  placeholder={t("searchProducts")}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-10"
-                  onBlur={() => {
-                    if (!searchQuery) {
-                      setShowSearch(false)
-                    }
-                  }}
-                />
-                {searchQuery && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-full p-0"
-                    onClick={() => setSearchQuery("")}
-                  >
-                    <span className="sr-only">Clear search</span>
-                    <span aria-hidden="true">×</span>
-                  </Button>
-                )}
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Button variant="outline" className="w-full gap-2" onClick={() => setShowSearch(true)}>
-                  <Search className="h-4 w-4" />
-                  {t("searchProducts")}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="relative w-full"
+            >
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                ref={searchInputRef}
+                placeholder={t("searchProducts")}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-10 shadow-sm hover:shadow transition-shadow duration-300"
+              />
+              {searchQuery && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-full p-0"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <span className="sr-only">Clear search</span>
+                  <span aria-hidden="true">×</span>
                 </Button>
-              </motion.div>
-            )}
+              )}
+            </motion.div>
           </AnimatePresence>
         </div>
 
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="outline" className="flex gap-2">
+            <Button variant="outline" className="flex gap-2 hover-lift">
               <Filter className="h-4 w-4" />
               {t("filters")}
             </Button>
@@ -247,7 +244,7 @@ export default function HomePage() {
                     variant={selectedCategory === "all" ? "default" : "outline"}
                     size="sm"
                     onClick={() => setSelectedCategory("all")}
-                    className="justify-start"
+                    className="justify-start hover:bg-primary/10 transition-colors duration-300"
                   >
                     {t("allCategories")}
                   </Button>
@@ -257,7 +254,7 @@ export default function HomePage() {
                       variant={selectedCategory === category.id ? "default" : "outline"}
                       size="sm"
                       onClick={() => setSelectedCategory(category.id)}
-                      className="justify-start"
+                      className="justify-start hover:bg-primary/10 transition-colors duration-300"
                     >
                       {category.icon} {language === "ar" ? category.nameAr : category.nameEn}
                     </Button>
@@ -282,10 +279,18 @@ export default function HomePage() {
               <div className="space-y-4">
                 <h3 className="text-sm font-medium">{t("expiryDate")}</h3>
                 <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" size="sm" className="justify-start">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start hover:bg-primary/10 transition-colors duration-300"
+                  >
                     {t("soonest")}
                   </Button>
-                  <Button variant="outline" size="sm" className="justify-start">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start hover:bg-primary/10 transition-colors duration-300"
+                  >
                     {t("latest")}
                   </Button>
                 </div>
@@ -299,12 +304,13 @@ export default function HomePage() {
                       setPriceRange([0, 100])
                       setSelectedCategory("all")
                     }}
+                    className="hover:bg-destructive/10 transition-colors duration-300"
                   >
                     {t("reset")}
                   </Button>
                 </SheetClose>
                 <SheetClose asChild>
-                  <Button>{t("apply")}</Button>
+                  <Button className="hover:scale-105 transition-transform duration-300">{t("apply")}</Button>
                 </SheetClose>
               </div>
             </div>
@@ -321,11 +327,15 @@ export default function HomePage() {
       >
         <div className="relative h-[300px] md:h-[400px]">
           {featuredProducts.map((product, index) => (
-            <div
+            <motion.div
               key={product.id}
-              className={`absolute inset-0 transition-opacity duration-500 ${
-                index === currentSlide ? "opacity-100" : "pointer-events-none opacity-0"
-              }`}
+              initial={{ opacity: 0 }}
+              animate={{
+                opacity: index === currentSlide ? 1 : 0,
+                zIndex: index === currentSlide ? 1 : 0,
+              }}
+              transition={{ duration: 0.8 }}
+              className="absolute inset-0"
             >
               <div className="relative h-full w-full">
                 <Image
@@ -337,11 +347,28 @@ export default function HomePage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
                   <Badge className="mb-2 bg-primary">{t("featured")}</Badge>
-                  <h2 className="mb-2 text-2xl font-bold md:text-3xl">
+                  <motion.h2
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
+                    className="mb-2 text-2xl font-bold md:text-3xl"
+                  >
                     {language === "ar" ? product.nameAr : product.name}
-                  </h2>
-                  <p className="mb-4 max-w-xl">{language === "ar" ? product.descriptionAr : product.description}</p>
-                  <div className="mb-4 flex items-center gap-4">
+                  </motion.h2>
+                  <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                    className="mb-4 max-w-xl"
+                  >
+                    {language === "ar" ? product.descriptionAr : product.description}
+                  </motion.p>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                    className="mb-4 flex items-center gap-4"
+                  >
                     <span className="text-2xl font-bold">
                       {product.discountedPrice} {t("currency")}
                     </span>
@@ -351,22 +378,31 @@ export default function HomePage() {
                     <Badge variant="outline" className="border-white text-white">
                       {product.discount}% {t("off")}
                     </Badge>
-                  </div>
-                  <Link href={`/product/${product.id}`}>
-                    <Button size="lg" className="bg-primary hover:bg-primary/90">
-                      {t("viewProduct")}
-                    </Button>
-                  </Link>
+                  </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                  >
+                    <Link href={`/product/${product.id}`}>
+                      <Button
+                        size="lg"
+                        className="bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-300"
+                      >
+                        {t("viewProduct")}
+                      </Button>
+                    </Link>
+                  </motion.div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
 
         <Button
           variant="ghost"
           size="icon"
-          className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-background/20 hover:bg-background/40"
+          className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-background/20 hover:bg-background/40 transition-colors duration-300"
           onClick={prevSlide}
         >
           <ChevronLeft className="h-6 w-6" />
@@ -375,7 +411,7 @@ export default function HomePage() {
         <Button
           variant="ghost"
           size="icon"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-background/20 hover:bg-background/40"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-background/20 hover:bg-background/40 transition-colors duration-300"
           onClick={nextSlide}
         >
           <ChevronRight className="h-6 w-6" />
@@ -385,7 +421,9 @@ export default function HomePage() {
           {featuredProducts.map((_, index) => (
             <button
               key={index}
-              className={`h-2 w-2 rounded-full ${index === currentSlide ? "bg-primary" : "bg-white/50"}`}
+              className={`h-2 w-2 rounded-full transition-all duration-300 ${
+                index === currentSlide ? "bg-primary w-4" : "bg-white/50"
+              }`}
               onClick={() => setCurrentSlide(index)}
             />
           ))}
@@ -403,11 +441,20 @@ export default function HomePage() {
             <Tabs defaultValue="all" className="mb-8">
               <ScrollArea className="w-full whitespace-nowrap pb-2">
                 <TabsList className="w-full justify-start">
-                  <TabsTrigger value="all" onClick={() => setSelectedCategory("all")}>
+                  <TabsTrigger
+                    value="all"
+                    onClick={() => setSelectedCategory("all")}
+                    className="transition-all duration-300 hover:bg-primary/10"
+                  >
                     {t("allCategories")}
                   </TabsTrigger>
                   {categories.map((category) => (
-                    <TabsTrigger key={category.id} value={category.id} onClick={() => setSelectedCategory(category.id)}>
+                    <TabsTrigger
+                      key={category.id}
+                      value={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className="transition-all duration-300 hover:bg-primary/10"
+                    >
                       {category.icon} {language === "ar" ? category.nameAr : category.nameEn}
                     </TabsTrigger>
                   ))}
@@ -417,22 +464,19 @@ export default function HomePage() {
           </motion.div>
 
           {/* Products Grid */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-2"
+          >
             {filteredProducts.length > 0 ? (
               filteredProducts.map((product, index) => {
-                const daysUntilExpiry = getDaysUntilExpiry(product.expiryDate)
                 const isFavorite = favorites.includes(product.id)
 
                 return (
-                  <motion.div
-                    key={product.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
-                    whileHover={{ y: -5 }}
-                    className="group"
-                  >
-                    <Card className="overflow-hidden transition-all hover:shadow-md">
+                  <motion.div key={product.id} variants={itemVariants} className="group product-card">
+                    <Card className="overflow-hidden h-full flex flex-col">
                       <div className="relative">
                         <Link href={`/product/${product.id}`}>
                           <div className="relative h-48 w-full overflow-hidden">
@@ -440,23 +484,23 @@ export default function HomePage() {
                               src={product.image || "/placeholder.svg"}
                               alt={language === "ar" ? product.nameAr : product.name}
                               fill
-                              className="object-cover transition-transform group-hover:scale-105"
+                              className="object-cover transition-transform duration-500 group-hover:scale-110"
                             />
                           </div>
                         </Link>
-                        <Badge className="absolute right-2 top-2 bg-secondary" variant="secondary">
+                        <Badge className="absolute right-2 top-2 bg-secondary flash" variant="secondary">
                           {product.discount}% {t("off")}
                         </Badge>
                         <div className="absolute left-2 top-2">
                           <CountdownTimer expiryDate={product.expiryDate} />
                         </div>
                       </div>
-                      <CardContent className="p-4">
+                      <CardContent className="p-4 flex-1 flex flex-col">
                         <div className="mb-2 text-xs text-muted-foreground">
                           {language === "ar" ? product.supermarketAr : product.supermarket}
                         </div>
                         <Link href={`/product/${product.id}`}>
-                          <h3 className="mb-1 line-clamp-1 font-medium hover:text-primary">
+                          <h3 className="mb-1 line-clamp-1 font-medium transition-colors duration-300 hover:text-primary">
                             {language === "ar" ? product.nameAr : product.name}
                           </h3>
                         </Link>
@@ -471,11 +515,11 @@ export default function HomePage() {
                             {product.originalPrice} {t("currency")}
                           </span>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="mt-auto flex gap-2">
                           <Button
                             variant="default"
                             size="sm"
-                            className="flex-1"
+                            className="flex-1 hover:scale-105 transition-transform duration-300"
                             onClick={() => handleAddToCart(product)}
                           >
                             <ShoppingCart className="mr-2 h-4 w-4" />
@@ -485,7 +529,11 @@ export default function HomePage() {
                             variant="outline"
                             size="icon"
                             onClick={() => toggleFavorite(product)}
-                            className={isFavorite ? "text-red-500 hover:text-red-600" : ""}
+                            className={`transition-all duration-300 ${
+                              isFavorite
+                                ? "text-red-500 hover:text-red-600 hover:bg-red-50"
+                                : "hover:text-red-500 hover:bg-red-50"
+                            }`}
                           >
                             <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
                           </Button>
@@ -506,12 +554,13 @@ export default function HomePage() {
                     setPriceRange([0, 100])
                     setSelectedCategory("all")
                   }}
+                  className="hover:scale-105 transition-transform duration-300"
                 >
                   {t("resetFilters")}
                 </Button>
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
 
         {/* Sidebar */}
@@ -525,12 +574,21 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
           >
-            <Card>
+            <Card className="hover-glow transition-shadow duration-300">
               <CardContent className="p-6">
-                <h3 className="mb-4 text-lg font-medium">{t("expiringSoon")}</h3>
+                <h3 className="mb-4 text-lg font-medium flex items-center gap-2">
+                  <span className="inline-block w-2 h-6 bg-primary rounded-full mr-2"></span>
+                  {t("expiringSoon")}
+                </h3>
                 <div className="space-y-4">
                   {products
-                    .filter((product) => getDaysUntilExpiry(product.expiryDate) <= 30) // Changed to 30 days since we have future dates
+                    .filter((product) => {
+                      const expiryDate = new Date(product.expiryDate)
+                      const today = new Date()
+                      const diffTime = expiryDate.getTime() - today.getTime()
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+                      return diffDays <= 30
+                    })
                     .slice(0, 3)
                     .map((product, index) => (
                       <motion.div
@@ -538,19 +596,19 @@ export default function HomePage() {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.1 }}
-                        className="group flex items-center gap-3"
+                        className="group flex items-center gap-3 hover:bg-muted/50 p-2 rounded-md transition-colors duration-300"
                       >
                         <Link href={`/product/${product.id}`} className="relative h-16 w-16 overflow-hidden rounded-md">
                           <Image
                             src={product.image || "/placeholder.svg"}
                             alt={language === "ar" ? product.nameAr : product.name}
                             fill
-                            className="object-cover transition-transform group-hover:scale-105"
+                            className="object-cover transition-transform duration-500 group-hover:scale-110"
                           />
                         </Link>
                         <div className="flex-1">
                           <Link href={`/product/${product.id}`}>
-                            <h4 className="line-clamp-1 font-medium group-hover:text-primary">
+                            <h4 className="line-clamp-1 font-medium transition-colors duration-300 group-hover:text-primary">
                               {language === "ar" ? product.nameAr : product.name}
                             </h4>
                           </Link>
@@ -564,7 +622,11 @@ export default function HomePage() {
                       </motion.div>
                     ))}
                 </div>
-                <Button variant="outline" className="mt-4 w-full" onClick={() => setSelectedCategory("all")}>
+                <Button
+                  variant="outline"
+                  className="mt-4 w-full hover:bg-primary/10 transition-colors duration-300"
+                  onClick={() => setSelectedCategory("all")}
+                >
                   {t("viewAll")}
                 </Button>
               </CardContent>
@@ -577,9 +639,12 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.8 }}
           >
-            <Card>
+            <Card className="hover-glow transition-shadow duration-300">
               <CardContent className="p-6">
-                <h3 className="mb-4 text-lg font-medium">{t("recommended")}</h3>
+                <h3 className="mb-4 text-lg font-medium flex items-center gap-2">
+                  <span className="inline-block w-2 h-6 bg-accent rounded-full mr-2"></span>
+                  {t("recommended")}
+                </h3>
                 <div className="space-y-4">
                   {products
                     .filter((product) => product.discount >= 30)
@@ -590,22 +655,22 @@ export default function HomePage() {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.1 }}
-                        className="group flex items-center gap-3"
+                        className="group flex items-center gap-3 hover:bg-muted/50 p-2 rounded-md transition-colors duration-300"
                       >
                         <Link href={`/product/${product.id}`} className="relative h-16 w-16 overflow-hidden rounded-md">
                           <Image
                             src={product.image || "/placeholder.svg"}
                             alt={language === "ar" ? product.nameAr : product.name}
                             fill
-                            className="object-cover transition-transform group-hover:scale-105"
+                            className="object-cover transition-transform duration-500 group-hover:scale-110"
                           />
-                          <div className="absolute -right-1 -top-1 rounded-full bg-secondary px-1 py-0.5 text-[10px] font-bold">
+                          <div className="absolute -right-1 -top-1 rounded-full bg-secondary px-1 py-0.5 text-[10px] font-bold flash">
                             {product.discount}%
                           </div>
                         </Link>
                         <div className="flex-1">
                           <Link href={`/product/${product.id}`}>
-                            <h4 className="line-clamp-1 font-medium group-hover:text-primary">
+                            <h4 className="line-clamp-1 font-medium transition-colors duration-300 group-hover:text-primary">
                               {language === "ar" ? product.nameAr : product.name}
                             </h4>
                           </Link>
@@ -621,7 +686,11 @@ export default function HomePage() {
                       </motion.div>
                     ))}
                 </div>
-                <Button variant="outline" className="mt-4 w-full" onClick={() => setSelectedCategory("all")}>
+                <Button
+                  variant="outline"
+                  className="mt-4 w-full hover:bg-primary/10 transition-colors duration-300"
+                  onClick={() => setSelectedCategory("all")}
+                >
                   {t("viewAll")}
                 </Button>
               </CardContent>
@@ -629,8 +698,6 @@ export default function HomePage() {
           </motion.div>
         </div>
       </div>
-      {/* Profile Shortcut */}
-      <ProfileShortcut />
     </div>
   )
 }

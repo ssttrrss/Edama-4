@@ -2,38 +2,63 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "@/components/language-provider"
+import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Eye, EyeOff, ArrowLeft, ArrowRight, Loader2 } from "lucide-react"
+import { Eye, EyeOff, ArrowLeft, ArrowRight, Loader2, AlertCircle } from "lucide-react"
 import { motion } from "framer-motion"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function LoginPage() {
   const { t, language } = useTranslation()
   const router = useRouter()
+  const { login, isAuthenticated } = useAuth()
+  const { toast } = useToast()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const BackArrow = language === "ar" ? ArrowRight : ArrowLeft
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/home")
+    }
+  }, [isAuthenticated, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null)
 
-    // Simulate API call
-    setTimeout(() => {
-      // Store user in localStorage (in a real app, this would be a JWT token)
-      localStorage.setItem("edama-user", JSON.stringify({ email }))
-      setIsLoading(false)
+    try {
+      await login(email, password)
+      toast({
+        title: t("loginSuccess"),
+        description: t("welcomeBack"),
+      })
       router.push("/home")
-    }, 1500)
+    } catch (error: any) {
+      if (error.message === "User not found") {
+        setError(t("userNotFound"))
+      } else if (error.message === "Invalid password") {
+        setError(t("invalidPassword"))
+      } else {
+        setError(t("loginError"))
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -44,8 +69,8 @@ export default function LoginPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        <Card>
-          <CardHeader>
+        <Card className="border-border shadow-lg">
+          <CardHeader className="space-y-1">
             <div className="mb-2 flex items-center">
               <Button
                 variant="ghost"
@@ -54,16 +79,24 @@ export default function LoginPage() {
                 onClick={() => router.push("/")}
                 aria-label={t("back")}
               >
-                <BackArrow />
+                <BackArrow className="h-4 w-4" />
               </Button>
-              <CardTitle className="text-2xl">{t("loginTitle")}</CardTitle>
+              <CardTitle className="text-2xl font-bold">{t("loginTitle")}</CardTitle>
             </div>
-            <CardDescription>{t("loginDescription")}</CardDescription>
+            <CardDescription className="text-base">{t("loginDescription")}</CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
+              {error && (
+                <Alert variant="destructive" className="text-sm">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
               <div className="space-y-2">
-                <Label htmlFor="email">{t("email")}</Label>
+                <Label htmlFor="email" className="text-base">
+                  {t("email")}
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -72,12 +105,15 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   dir="ltr"
+                  className="h-11"
                 />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">{t("password")}</Label>
-                  <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+                  <Label htmlFor="password" className="text-base">
+                    {t("password")}
+                  </Label>
+                  <Link href="/forgot-password" className="text-sm text-primary hover:underline">
                     {t("forgotPassword")}
                   </Link>
                 </div>
@@ -90,6 +126,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     dir="ltr"
+                    className="h-11"
                   />
                   <Button
                     type="button"
@@ -105,7 +142,7 @@ export default function LoginPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col">
-              <Button type="submit" className="mb-4 w-full" disabled={isLoading}>
+              <Button type="submit" className="mb-4 w-full h-11 text-base" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -115,9 +152,9 @@ export default function LoginPage() {
                   t("login")
                 )}
               </Button>
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-base text-muted-foreground">
                 {t("dontHaveAccount")}{" "}
-                <Link href="/signup" className="text-primary hover:underline">
+                <Link href="/signup" className="text-primary font-medium hover:underline">
                   {t("createAccount")}
                 </Link>
               </p>

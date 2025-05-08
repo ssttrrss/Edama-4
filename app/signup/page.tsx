@@ -2,20 +2,25 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useTranslation } from "@/components/language-provider"
+import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Eye, EyeOff, ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react"
+import { Eye, EyeOff, ArrowLeft, ArrowRight, CheckCircle2, Loader2, AlertCircle } from "lucide-react"
 import { motion } from "framer-motion"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function SignupPage() {
   const { t, language } = useTranslation()
   const router = useRouter()
+  const { register, isAuthenticated } = useAuth()
+  const { toast } = useToast()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -24,26 +29,56 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [accountType, setAccountType] = useState("buyer")
+  const [error, setError] = useState<string | null>(null)
 
   const BackArrow = language === "ar" ? ArrowRight : ArrowLeft
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/home")
+    }
+  }, [isAuthenticated, router])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
 
     if (password !== confirmPassword) {
-      // Show error
+      setError(t("passwordsDontMatch"))
+      return
+    }
+
+    if (!hasMinLength || !hasUpperCase || !hasNumber) {
+      setError(t("passwordRequirements"))
       return
     }
 
     setIsLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      // Store user in localStorage (in a real app, this would be a JWT token)
-      localStorage.setItem("edama-user", JSON.stringify({ name, email, accountType }))
-      setIsLoading(false)
+    try {
+      await register({
+        name,
+        email,
+        password,
+        accountType: accountType as "buyer" | "seller",
+      })
+
+      toast({
+        title: t("accountCreated"),
+        description: t("accountCreatedDescription"),
+      })
+
       router.push("/home")
-    }, 1500)
+    } catch (error: any) {
+      if (error.message === "Email already registered") {
+        setError(t("emailAlreadyRegistered"))
+      } else {
+        setError(t("registrationError"))
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Password strength indicators
@@ -60,8 +95,8 @@ export default function SignupPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        <Card>
-          <CardHeader>
+        <Card className="border-border shadow-lg">
+          <CardHeader className="space-y-1">
             <div className="mb-2 flex items-center">
               <Button
                 variant="ghost"
@@ -70,16 +105,24 @@ export default function SignupPage() {
                 onClick={() => router.push("/")}
                 aria-label={t("back")}
               >
-                <BackArrow />
+                <BackArrow className="h-4 w-4" />
               </Button>
-              <CardTitle className="text-2xl">{t("signupTitle")}</CardTitle>
+              <CardTitle className="text-2xl font-bold">{t("signupTitle")}</CardTitle>
             </div>
-            <CardDescription>{t("signupDescription")}</CardDescription>
+            <CardDescription className="text-base">{t("signupDescription")}</CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
+              {error && (
+                <Alert variant="destructive" className="text-sm">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
               <div className="space-y-2">
-                <Label htmlFor="name">{t("fullName")}</Label>
+                <Label htmlFor="name" className="text-base">
+                  {t("fullName")}
+                </Label>
                 <Input
                   id="name"
                   type="text"
@@ -87,10 +130,13 @@ export default function SignupPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
+                  className="h-11"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">{t("email")}</Label>
+                <Label htmlFor="email" className="text-base">
+                  {t("email")}
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -99,10 +145,13 @@ export default function SignupPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   dir="ltr"
+                  className="h-11"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">{t("password")}</Label>
+                <Label htmlFor="password" className="text-base">
+                  {t("password")}
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -112,6 +161,7 @@ export default function SignupPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     dir="ltr"
+                    className="h-11"
                   />
                   <Button
                     type="button"
@@ -126,7 +176,7 @@ export default function SignupPage() {
                 </div>
 
                 {password && (
-                  <div className="mt-2 space-y-1 text-xs">
+                  <div className="mt-2 space-y-1 text-sm">
                     <div className="flex items-center gap-1">
                       <CheckCircle2
                         className={`h-3 w-3 ${hasMinLength ? "text-green-500" : "text-muted-foreground"}`}
@@ -153,7 +203,9 @@ export default function SignupPage() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">{t("confirmPassword")}</Label>
+                <Label htmlFor="confirmPassword" className="text-base">
+                  {t("confirmPassword")}
+                </Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
@@ -163,6 +215,7 @@ export default function SignupPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     dir="ltr"
+                    className="h-11"
                   />
                   <Button
                     type="button"
@@ -177,7 +230,7 @@ export default function SignupPage() {
                 </div>
 
                 {confirmPassword && (
-                  <div className="mt-2 flex items-center gap-1 text-xs">
+                  <div className="mt-2 flex items-center gap-1 text-sm">
                     <CheckCircle2 className={`h-3 w-3 ${passwordsMatch ? "text-green-500" : "text-red-500"}`} />
                     <span className={passwordsMatch ? "text-green-500" : "text-red-500"}>
                       {passwordsMatch ? t("passwordsMatch") : t("passwordsDontMatch")}
@@ -186,7 +239,7 @@ export default function SignupPage() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label>{t("accountType")}</Label>
+                <Label className="text-base">{t("accountType")}</Label>
                 <div className="flex gap-4">
                   <div className="flex items-center space-x-2 rtl:space-x-reverse">
                     <input
@@ -217,7 +270,7 @@ export default function SignupPage() {
                     </Label>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   {accountType === "seller" ? t("sellerAccountDescription") : t("buyerAccountDescription")}
                 </p>
               </div>
@@ -225,7 +278,7 @@ export default function SignupPage() {
             <CardFooter className="flex flex-col">
               <Button
                 type="submit"
-                className="mb-4 w-full"
+                className="mb-4 w-full h-11 text-base"
                 disabled={isLoading || !passwordsMatch || !hasMinLength || !hasUpperCase || !hasNumber}
               >
                 {isLoading ? (
@@ -237,9 +290,9 @@ export default function SignupPage() {
                   t("createAccount")
                 )}
               </Button>
-              <p className="text-center text-sm text-muted-foreground">
+              <p className="text-center text-base text-muted-foreground">
                 {t("alreadyHaveAccount")}{" "}
-                <Link href="/login" className="text-primary hover:underline">
+                <Link href="/login" className="text-primary font-medium hover:underline">
                   {t("login")}
                 </Link>
               </p>

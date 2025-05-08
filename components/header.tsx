@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useTranslation } from "@/components/language-provider"
 import { useTheme } from "next-themes"
 import { useCart } from "@/components/cart-provider"
+import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
@@ -43,7 +44,6 @@ import {
   Store,
   ChevronDown,
   Bell,
-  Search,
   Home,
   Info,
   Leaf,
@@ -56,14 +56,12 @@ export default function Header() {
   const { t, language, setLanguage, dir } = useTranslation()
   const { setTheme, theme } = useTheme()
   const { itemCount } = useCart()
+  const { user, isAuthenticated, logout } = useAuth()
   const pathname = usePathname()
+  const router = useRouter()
   const isMobile = useMobile()
   const [isScrolled, setIsScrolled] = useState(false)
   const [showContactOptions, setShowContactOptions] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [userData, setUserData] = useState<any>(null)
-  const [accountType, setAccountType] = useState<"buyer" | "seller">("buyer")
-  const [showSearchBar, setShowSearchBar] = useState(false)
 
   // Handle scroll effect
   useEffect(() => {
@@ -72,21 +70,6 @@ export default function Header() {
     }
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
-
-  // Check if user is logged in
-  useEffect(() => {
-    const user = localStorage.getItem("edama-user")
-    if (user) {
-      try {
-        const parsedUser = JSON.parse(user)
-        setUserData(parsedUser)
-        setIsLoggedIn(true)
-        setAccountType(parsedUser.accountType || "buyer")
-      } catch (error) {
-        console.error("Failed to parse user data", error)
-      }
-    }
   }, [])
 
   // Toggle language
@@ -101,8 +84,8 @@ export default function Header() {
 
   // Handle logout
   const handleLogout = () => {
-    localStorage.removeItem("edama-user")
-    window.location.href = "/"
+    logout()
+    router.push("/")
   }
 
   // Handle contact options
@@ -134,7 +117,7 @@ export default function Header() {
       { href: "/profile?tab=analytics", label: t("analytics"), icon: <BarChart3 className="h-4 w-4 mr-2" /> },
     ]
 
-    return accountType === "seller" ? sellerItems : buyerItems
+    return user?.accountType === "seller" ? sellerItems : buyerItems
   }
 
   return (
@@ -170,15 +153,15 @@ export default function Header() {
                     <span className="text-xl font-bold text-primary">Edama</span>
                   </div>
 
-                  {isLoggedIn && userData && (
+                  {isAuthenticated && user && (
                     <div className="mb-6 flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                       <Avatar className="h-10 w-10 border-2 border-primary/20">
-                        <AvatarImage src={userData.avatar || "/placeholder.svg"} alt={userData.name} />
-                        <AvatarFallback>{userData.name?.charAt(0) || "U"}</AvatarFallback>
+                        <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
+                        <AvatarFallback>{user.name?.charAt(0) || "U"}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{userData.name}</p>
-                        <p className="text-sm text-muted-foreground">{userData.email}</p>
+                        <p className="font-medium">{user.name}</p>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
                       </div>
                     </div>
                   )}
@@ -210,7 +193,7 @@ export default function Header() {
                     </SheetClose>
                   </nav>
 
-                  {isLoggedIn ? (
+                  {isAuthenticated ? (
                     <div className="border-t border-border pt-4 mt-4 space-y-2">
                       <SheetClose asChild>
                         <Link
@@ -289,8 +272,8 @@ export default function Header() {
             )}
 
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2">
-              <div className="relative h-10 w-10 overflow-hidden rounded-full">
+            <Link href="/" className="flex items-center gap-2 group">
+              <div className="relative h-10 w-10 overflow-hidden rounded-full transition-transform duration-300 group-hover:scale-110">
                 <Image
                   src="/placeholder.svg?height=40&width=40"
                   alt="Edama Logo"
@@ -300,7 +283,9 @@ export default function Header() {
                   priority
                 />
               </div>
-              <span className="text-xl font-bold text-primary">Edama</span>
+              <span className="text-xl font-bold text-primary transition-colors duration-300 group-hover:text-primary/80">
+                Edama
+              </span>
             </Link>
           </div>
 
@@ -357,19 +342,13 @@ export default function Header() {
 
           {/* Right side controls */}
           <div className="flex items-center gap-2">
-            {/* Search button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-muted-foreground"
-              onClick={() => setShowSearchBar(!showSearchBar)}
-            >
-              <Search className="h-5 w-5" />
-            </Button>
-
             {/* Cart button */}
             <Link href="/cart">
-              <Button variant="ghost" size="icon" className="relative text-muted-foreground">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative text-muted-foreground transition-all duration-300 hover:scale-110 hover:text-primary"
+              >
                 <ShoppingCart className="h-5 w-5" />
                 <AnimatePresence>
                   {itemCount > 0 && (
@@ -388,11 +367,15 @@ export default function Header() {
               </Button>
             </Link>
 
-            {/* Notifications */}
-            {isLoggedIn && (
+            {/* Notifications - only show when logged in */}
+            {isAuthenticated && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="relative text-muted-foreground">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative text-muted-foreground transition-all duration-300 hover:scale-110 hover:text-primary"
+                  >
                     <Bell className="h-5 w-5" />
                     <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary"></span>
                   </Button>
@@ -436,25 +419,23 @@ export default function Header() {
               </DropdownMenu>
             )}
 
-            {/* User menu (desktop) */}
-            {!isMobile && isLoggedIn ? (
+            {/* User menu (desktop) - only show when logged in */}
+            {!isMobile && isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2">
+                  <Button variant="ghost" size="sm" className="gap-2 transition-all duration-300 hover:bg-primary/10">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={userData?.avatar || "/placeholder.svg"} alt={userData?.name || "User"} />
-                      <AvatarFallback>{userData?.name?.charAt(0) || "U"}</AvatarFallback>
+                      <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name || "User"} />
+                      <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
                     </Avatar>
-                    <span className="hidden sm:inline-block max-w-[100px] truncate">
-                      {userData?.name || t("account")}
-                    </span>
+                    <span className="hidden sm:inline-block max-w-[100px] truncate">{user?.name || t("account")}</span>
                     <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel className="flex flex-col">
-                    <span>{userData?.name}</span>
-                    <span className="text-xs font-normal text-muted-foreground">{userData?.email}</span>
+                    <span>{user?.name}</span>
+                    <span className="text-xs font-normal text-muted-foreground">{user?.email}</span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
@@ -492,15 +473,18 @@ export default function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              !isMobile && (
+              !isMobile &&
+              !isAuthenticated && (
                 <div className="flex items-center gap-2">
                   <Link href="/login">
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" className="transition-all duration-300 hover:bg-primary/10">
                       {t("login")}
                     </Button>
                   </Link>
                   <Link href="/signup">
-                    <Button size="sm">{t("signup")}</Button>
+                    <Button size="sm" className="transition-all duration-300 hover:scale-105">
+                      {t("signup")}
+                    </Button>
                   </Link>
                 </div>
               )
@@ -509,10 +493,20 @@ export default function Header() {
             {/* Theme and language toggles (desktop) */}
             {!isMobile && (
               <>
-                <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-muted-foreground">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className="text-muted-foreground transition-all duration-300 hover:scale-110 hover:text-primary"
+                >
                   {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                 </Button>
-                <Button variant="ghost" size="sm" onClick={toggleLanguage} className="text-muted-foreground">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleLanguage}
+                  className="text-muted-foreground transition-all duration-300 hover:bg-primary/10"
+                >
                   {language === "ar" ? "EN" : "عربي"}
                 </Button>
               </>
@@ -520,39 +514,6 @@ export default function Header() {
           </div>
         </div>
       </div>
-
-      {/* Search bar */}
-      <AnimatePresence>
-        {showSearchBar && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="border-t border-border overflow-hidden"
-          >
-            <div className="container mx-auto px-4 py-3">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder={t("searchProducts")}
-                  className="w-full rounded-md border border-input bg-background px-9 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  autoFocus
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-2 top-1/2 h-7 w-7 -translate-y-1/2 rounded-full"
-                  onClick={() => setShowSearchBar(false)}
-                >
-                  <span className="sr-only">Close search</span>
-                  <span aria-hidden="true">×</span>
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </header>
   )
 }
