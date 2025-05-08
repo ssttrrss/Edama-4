@@ -100,7 +100,7 @@
 
 /* Improved spacing */
 .card {
-  @apply rounded-xl border shadow-sm;
+  @apply rounded-xl border shadow-sm transition-shadow duration-300;
 }
 
 .card-header {
@@ -142,6 +142,36 @@
 
 .animate-slide-up {
   animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.5s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.5s ease-out;
 }
 
 @keyframes pulse {
@@ -197,7 +227,7 @@
 .input,
 .textarea,
 .select {
-  @apply rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  @apply rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-shadow duration-300;
 }
 
 .label {
@@ -206,7 +236,7 @@
 
 /* Button improvements */
 .button {
-  @apply inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+  @apply inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
 }
 
 /* Improved typography */
@@ -291,4 +321,188 @@ html[lang="ar"] {
 
 .flash {
   animation: flash 2s ease-in-out infinite;
+}
+
+/* Enhanced focus styles */
+.focus-ring {
+  @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-shadow duration-300;
+}
+
+/* Gradient text */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+}
+
+/* Glass effect */
+.glass {
+  @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-sm;
+}
+
+.dark .glass {
+  @apply bg-black/10 border-black/20;
+}
+
+/* Skeleton loading */
+.skeleton {
+  @apply animate-pulse bg-muted rounded;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-muted/50 rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-primary/30 rounded-full hover:bg-primary/50 transition-colors duration-300;
+}
+
+/* Tooltip styles */
+.tooltip {
+  @apply relative inline-block;
+}
+
+.tooltip .tooltip-text {
+  @apply invisible absolute z-50 w-max p-2 bg-popover text-popover-foreground text-xs rounded shadow-md opacity-0 transition-opacity duration-300;
+}
+
+.tooltip:hover .tooltip-text {
+  @apply visible opacity-100;
+}
+
+/* Page transitions */
+.page-enter {
+  @apply opacity-0;
+}
+
+.page-enter-active {
+  @apply opacity-100 transition-opacity duration-300;
+}
+
+.page-exit {
+  @apply opacity-100;
+}
+
+.page-exit-active {
+  @apply opacity-0 transition-opacity duration-300;
+}
+
+/* Enhanced card styles */
+.enhanced-card {
+  @apply rounded-xl border shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-1;
+}
+
+.enhanced-card-header {
+  @apply p-6 border-b;
+}
+
+.enhanced-card-content {
+  @apply p-6;
+}
+
+.enhanced-card-footer {
+  @apply p-6 border-t;
+}
+
+/* Stat card styles */
+.stat-card {
+  @apply rounded-xl border p-6 transition-all duration-300 hover:shadow-md;
+}
+
+.stat-value {
+  @apply text-2xl font-bold;
+}
+
+.stat-label {
+  @apply text-sm text-muted-foreground;
+}
+
+/* Badge styles */
+.badge-outline-success {
+  @apply border-green-500 text-green-500;
+}
+
+.badge-outline-warning {
+  @apply border-yellow-500 text-yellow-500;
+}
+
+.badge-outline-error {
+  @apply border-red-500 text-red-500;
+}
+
+.badge-outline-info {
+  @apply border-blue-500 text-blue-500;
+}
+
+/* Responsive utilities */
+.responsive-container {
+  @apply container mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* Improved spacing utilities */
+.space-y-xs > * + * {
+  @apply mt-1;
+}
+
+.space-y-sm > * + * {
+  @apply mt-2;
+}
+
+.space-y-md > * + * {
+  @apply mt-4;
+}
+
+.space-y-lg > * + * {
+  @apply mt-6;
+}
+
+.space-y-xl > * + * {
+  @apply mt-8;
+}
+
+/* Improved text utilities */
+.text-caption {
+  @apply text-xs text-muted-foreground;
+}
+
+.text-small {
+  @apply text-sm;
+}
+
+.text-body {
+  @apply text-base;
+}
+
+.text-large {
+  @apply text-lg;
+}
+
+/* Divider styles */
+.divider {
+  @apply h-px w-full bg-border my-4;
+}
+
+.divider-vertical {
+  @apply w-px h-full bg-border mx-4;
+}
+
+/* Improved form styles */
+.form-group {
+  @apply space-y-2 mb-4;
+}
+
+.form-label {
+  @apply block text-sm font-medium;
+}
+
+.form-hint {
+  @apply text-xs text-muted-foreground mt-1;
+}
+
+.form-error {
+  @apply text-xs text-destructive mt-1;
 }

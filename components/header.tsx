@@ -122,8 +122,8 @@ export default function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full transition-all duration-300 ${
-        isScrolled ? "bg-background/95 backdrop-blur-md shadow-sm" : "bg-background"
+      className={`sticky top-0 z-50 w-full transition-all duration-500 ${
+        isScrolled ? "bg-background/95 backdrop-blur-md shadow-md" : "bg-background"
       }`}
     >
       <div className="container mx-auto px-4">
@@ -134,7 +134,11 @@ export default function Header() {
             {isMobile && (
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-muted-foreground md:hidden">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground md:hidden hover:bg-primary/10 transition-colors duration-300"
+                  >
                     <Menu className="h-5 w-5" />
                     <span className="sr-only">{t("menu")}</span>
                   </Button>
@@ -150,7 +154,10 @@ export default function Header() {
                         className="object-cover"
                       />
                     </div>
-                    <span className="text-xl font-bold text-primary">Edama</span>
+                    <div className="flex flex-col">
+                      <span className="text-xl font-bold text-primary">Edama</span>
+                      <span className="text-xs text-muted-foreground">{t("sustainabilityPlatform")}</span>
+                    </div>
                   </div>
 
                   {isAuthenticated && user && (
@@ -171,8 +178,8 @@ export default function Header() {
                       <SheetClose asChild key={item.href}>
                         <Link
                           href={item.href}
-                          className={`flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted ${
-                            pathname === item.href ? "bg-muted font-medium text-primary" : ""
+                          className={`flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10 ${
+                            pathname === item.href ? "bg-primary/15 font-medium text-primary" : ""
                           }`}
                         >
                           {item.icon}
@@ -184,7 +191,7 @@ export default function Header() {
                     <SheetClose asChild>
                       <Link
                         href="#"
-                        className="flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted"
+                        className="flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10"
                         onClick={() => setShowContactOptions(!showContactOptions)}
                       >
                         <Mail className="h-4 w-4 mr-2" />
@@ -198,7 +205,7 @@ export default function Header() {
                       <SheetClose asChild>
                         <Link
                           href="/profile"
-                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted"
+                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10"
                         >
                           <User className="h-4 w-4" />
                           {t("profile")}
@@ -207,7 +214,7 @@ export default function Header() {
                       <SheetClose asChild>
                         <Link
                           href="/profile?tab=favorites"
-                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted"
+                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10"
                         >
                           <Heart className="h-4 w-4" />
                           {t("favorites")}
@@ -216,7 +223,7 @@ export default function Header() {
                       <SheetClose asChild>
                         <Link
                           href="/profile?tab=orders"
-                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted"
+                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10"
                         >
                           <Package className="h-4 w-4" />
                           {t("orders")}
@@ -225,7 +232,7 @@ export default function Header() {
                       <SheetClose asChild>
                         <Link
                           href="/profile?tab=settings"
-                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted"
+                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10"
                         >
                           <Settings className="h-4 w-4" />
                           {t("settings")}
@@ -233,7 +240,7 @@ export default function Header() {
                       </SheetClose>
                       <Button
                         variant="ghost"
-                        className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors duration-300"
                         onClick={handleLogout}
                       >
                         <LogOut className="h-4 w-4 mr-2" />
@@ -244,14 +251,19 @@ export default function Header() {
                     <div className="border-t border-border pt-4 mt-4 flex gap-2">
                       <SheetClose asChild>
                         <Link href="/login" className="flex-1">
-                          <Button variant="outline" className="w-full">
+                          <Button
+                            variant="outline"
+                            className="w-full hover:bg-primary/10 transition-colors duration-300"
+                          >
                             {t("login")}
                           </Button>
                         </Link>
                       </SheetClose>
                       <SheetClose asChild>
                         <Link href="/signup" className="flex-1">
-                          <Button className="w-full">{t("signup")}</Button>
+                          <Button className="w-full hover:scale-105 transition-transform duration-300">
+                            {t("signup")}
+                          </Button>
                         </Link>
                       </SheetClose>
                     </div>
@@ -259,10 +271,20 @@ export default function Header() {
 
                   <div className="border-t border-border pt-4 mt-4">
                     <div className="flex justify-between">
-                      <Button variant="ghost" size="sm" onClick={toggleLanguage}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={toggleLanguage}
+                        className="hover:bg-primary/10 transition-colors duration-300"
+                      >
                         {language === "ar" ? "English" : "العربية"}
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={toggleTheme}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={toggleTheme}
+                        className="hover:bg-primary/10 transition-colors duration-300"
+                      >
                         {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                       </Button>
                     </div>
@@ -273,7 +295,7 @@ export default function Header() {
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="relative h-10 w-10 overflow-hidden rounded-full transition-transform duration-300 group-hover:scale-110">
+              <div className="relative h-10 w-10 overflow-hidden rounded-full transition-transform duration-500 group-hover:scale-110">
                 <Image
                   src="/placeholder.svg?height=40&width=40"
                   alt="Edama Logo"
@@ -283,9 +305,14 @@ export default function Header() {
                   priority
                 />
               </div>
-              <span className="text-xl font-bold text-primary transition-colors duration-300 group-hover:text-primary/80">
-                Edama
-              </span>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold text-primary transition-colors duration-300 group-hover:text-primary/80">
+                  Edama
+                </span>
+                <span className="text-xs text-muted-foreground transition-opacity duration-300 group-hover:opacity-80">
+                  {t("sustainabilityPlatform")}
+                </span>
+              </div>
             </Link>
           </div>
 
@@ -314,7 +341,7 @@ export default function Header() {
                   <NavigationMenuContent>
                     <div className="grid gap-3 p-4 w-[200px]">
                       <div
-                        className="flex items-center gap-2 rounded-md p-2 hover:bg-muted cursor-pointer"
+                        className="flex items-center gap-2 rounded-md p-2 hover:bg-primary/10 cursor-pointer transition-colors duration-300"
                         onClick={handleSendSMS}
                       >
                         <Phone className="h-4 w-4 text-primary" />
@@ -324,7 +351,7 @@ export default function Header() {
                         </div>
                       </div>
                       <div
-                        className="flex items-center gap-2 rounded-md p-2 hover:bg-muted cursor-pointer"
+                        className="flex items-center gap-2 rounded-md p-2 hover:bg-primary/10 cursor-pointer transition-colors duration-300"
                         onClick={handleSendEmail}
                       >
                         <Mail className="h-4 w-4 text-primary" />
@@ -377,14 +404,23 @@ export default function Header() {
                     className="relative text-muted-foreground transition-all duration-300 hover:scale-110 hover:text-primary"
                   >
                     <Bell className="h-5 w-5" />
-                    <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary"></span>
+                    <motion.span
+                      initial={{ scale: 0.8, opacity: 0.5 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{
+                        repeat: Number.POSITIVE_INFINITY,
+                        repeatType: "reverse",
+                        duration: 1.5,
+                      }}
+                      className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary"
+                    ></motion.span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80">
                   <DropdownMenuLabel>{t("notifications")}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <div className="max-h-[300px] overflow-auto">
-                    <div className="p-3 hover:bg-muted rounded-md transition-colors cursor-pointer">
+                    <div className="p-3 hover:bg-primary/5 rounded-md transition-colors duration-300 cursor-pointer">
                       <div className="flex items-start gap-3">
                         <div className="rounded-full bg-primary/10 p-2">
                           <Leaf className="h-4 w-4 text-primary" />
@@ -396,7 +432,7 @@ export default function Header() {
                         </div>
                       </div>
                     </div>
-                    <div className="p-3 hover:bg-muted rounded-md transition-colors cursor-pointer">
+                    <div className="p-3 hover:bg-primary/5 rounded-md transition-colors duration-300 cursor-pointer">
                       <div className="flex items-start gap-3">
                         <div className="rounded-full bg-green-100 p-2 dark:bg-green-900/20">
                           <Package className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -411,7 +447,11 @@ export default function Header() {
                   </div>
                   <DropdownMenuSeparator />
                   <div className="p-2">
-                    <Button variant="ghost" size="sm" className="w-full justify-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-center hover:bg-primary/10 transition-colors duration-300"
+                    >
                       {t("viewAllNotifications")}
                     </Button>
                   </div>
@@ -482,7 +522,7 @@ export default function Header() {
                     </Button>
                   </Link>
                   <Link href="/signup">
-                    <Button size="sm" className="transition-all duration-300 hover:scale-105">
+                    <Button size="sm" className="transition-all duration-300 hover:scale-105 shadow-sm hover:shadow">
                       {t("signup")}
                     </Button>
                   </Link>

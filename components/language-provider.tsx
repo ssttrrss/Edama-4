@@ -23,6 +23,10 @@ const translations: Translations = {
     ar: "منصة تربط بين المتاجر التي لديها منتجات قاربت على انتهاء الصلاحية والمستهلكين المهتمين بالبيئة، مما يساعد على تقليل هدر الطعام وتعزيز الاستهلاك المسؤول بأسعار مخفضة.",
     en: "A platform connecting stores with near-expiry products to eco-conscious consumers, helping reduce food waste and promoting responsible consumption at discounted prices.",
   },
+  sustainabilityPlatform: {
+    ar: "منصة الاستدامة",
+    en: "Sustainability Platform",
+  },
   login: {
     ar: "تسجيل الدخول",
     en: "Login",
@@ -167,6 +171,10 @@ const translations: Translations = {
     ar: "ابحث عن منتجات...",
     en: "Search products...",
   },
+  searchFavorites: {
+    ar: "ابحث في المفضلة...",
+    en: "Search favorites...",
+  },
   filters: {
     ar: "الفلاتر",
     en: "Filters",
@@ -297,6 +305,22 @@ const translations: Translations = {
     ar: "الوصف",
     en: "Description",
   },
+  productDetails: {
+    ar: "تفاصيل المنتج",
+    en: "Product Details",
+  },
+  ingredients: {
+    ar: "المكونات",
+    en: "Ingredients",
+  },
+  nutritionalInfo: {
+    ar: "المعلومات الغذائية",
+    en: "Nutritional Information",
+  },
+  storageInstructions: {
+    ar: "تعليمات التخزين",
+    en: "Storage Instructions",
+  },
   similarProducts: {
     ar: "منتجات مشابهة",
     en: "Similar Products",
@@ -350,6 +374,22 @@ const translations: Translations = {
   favorites: {
     ar: "المفضلة",
     en: "Favorites",
+  },
+  favoritesDescription: {
+    ar: "المنتجات التي أضفتها إلى المفضلة",
+    en: "Products you've added to your favorites",
+  },
+  noFavorites: {
+    ar: "لا توجد منتجات في المفضلة",
+    en: "No favorite products yet",
+  },
+  noFavoritesDescription: {
+    ar: "أضف منتجات إلى المفضلة لتظهر هنا",
+    en: "Add products to your favorites to see them here",
+  },
+  noMatchingFavorites: {
+    ar: "لا توجد منتجات مطابقة لبحثك",
+    en: "No products match your search",
   },
   favoritesAr: {
     ar: "المفضلة",
@@ -415,6 +455,22 @@ const translations: Translations = {
   expiresIn: {
     ar: "ينتهي في",
     en: "Expires in",
+  },
+  days: {
+    ar: "أيام",
+    en: "days",
+  },
+  hours: {
+    ar: "ساعات",
+    en: "hours",
+  },
+  minutes: {
+    ar: "دقائق",
+    en: "minutes",
+  },
+  seconds: {
+    ar: "ثواني",
+    en: "seconds",
   },
 
   // Seller information
@@ -526,6 +582,251 @@ const translations: Translations = {
   completed: {
     ar: "مكتمل",
     en: "Completed",
+  },
+  // Profile page
+  welcomeBack: {
+    ar: "مرحبًا بعودتك",
+    en: "Welcome Back",
+  },
+  profileDashboardDescription: {
+    ar: "إدارة حسابك وتتبع طلباتك ومفضلاتك",
+    en: "Manage your account, track orders, and favorites",
+  },
+  memberSince: {
+    ar: "عضو منذ",
+    en: "Member since",
+  },
+  editProfile: {
+    ar: "تعديل الملف الشخصي",
+    en: "Edit Profile",
+  },
+  saveChanges: {
+    ar: "حفظ التغييرات",
+    en: "Save Changes",
+  },
+  profileUpdated: {
+    ar: "تم تحديث الملف الشخصي",
+    en: "Profile Updated",
+  },
+  profileUpdatedDescription: {
+    ar: "تم تحديث معلومات ملفك الشخصي بنجاح",
+    en: "Your profile information has been updated successfully",
+  },
+  updateError: {
+    ar: "خطأ في التحديث",
+    en: "Update Error",
+  },
+  updateErrorDescription: {
+    ar: "حدث خطأ أثناء تحديث ملفك الشخصي. يرجى المحاولة مرة أخرى",
+    en: "An error occurred while updating your profile. Please try again",
+  },
+  itemRemoved: {
+    ar: "تمت إزالة العنصر",
+    en: "Item Removed",
+  },
+  itemRemovedFromFavorites: {
+    ar: "تمت إزالة العنصر من المفضلة",
+    en: "Item removed from favorites",
+  },
+  storeRemoved: {
+    ar: "تمت إزالة المتجر",
+    en: "Store Removed",
+  },
+  storeRemovedFromFavorites: {
+    ar: "تمت إزالة المتجر من المفضلة",
+    en: "Store removed from favorites",
+  },
+  productAdded: {
+    ar: "تمت إضافة المنتج",
+    en: "Product Added",
+  },
+  productAddedDescription: {
+    ar: "تمت إضافة المنتج بنجاح",
+    en: "Product has been added successfully",
+  },
+  productDeleted: {
+    ar: "تم حذف المنتج",
+    en: "Product Deleted",
+  },
+  productDeletedDescription: {
+    ar: "تم حذف المنتج بنجاح",
+    en: "Product has been deleted successfully",
+  },
+  productUpdated: {
+    ar: "تم تحديث المنتج",
+    en: "Product Updated",
+  },
+  productVisibilityUpdated: {
+    ar: "تم تحديث حالة ظهور المنتج",
+    en: "Product visibility has been updated",
+  },
+  profileCompletion: {
+    ar: "اكتمال الملف الشخصي",
+    en: "Profile Completion",
+  },
+  almostThere: {
+    ar: "أنت على وشك الانتهاء",
+    en: "Almost there",
+  },
+  excellent: {
+    ar: "ممتاز",
+    en: "Excellent",
+  },
+  completionTips: {
+    ar: "نصائح لإكمال الملف الشخصي",
+    en: "Completion Tips",
+  },
+  dismiss: {
+    ar: "تجاهل",
+    en: "Dismiss",
+  },
+  addProfilePicture: {
+    ar: "أضف صورة ملفك الشخصي",
+    en: "Add your profile picture",
+  },
+  completeContactInfo: {
+    ar: "أكمل معلومات الاتصال الخاصة بك",
+    en: "Complete your contact information",
+  },
+  writeBio: {
+    ar: "اكتب نبذة عنك",
+    en: "Write a bio about yourself",
+  },
+  leaveReview: {
+    ar: "اترك تقييمًا للمنتجات التي اشتريتها",
+    en: "Leave a review for products you've purchased",
+  },
+  foodSaved: {
+    ar: "الطعام المحفوظ",
+    en: "Food Saved",
+  },
+  co2Reduced: {
+    ar: "ثاني أكسيد الكربون المخفض",
+    en: "CO₂ Reduced",
+  },
+  moneySaved: {
+    ar: "المال الموفر",
+    en: "Money Saved",
+  },
+  overview: {
+    ar: "نظرة عامة",
+    en: "Overview",
+  },
+  reviews: {
+    ar: "التقييمات",
+    en: "Reviews",
+  },
+  savedStores: {
+    ar: "المتاجر المحفوظة",
+    en: "Saved Stores",
+  },
+  myProducts: {
+    ar: "منتجاتي",
+    en: "My Products",
+  },
+  analytics: {
+    ar: "التحليلات",
+    en: "Analytics",
+  },
+  storeSettings: {
+    ar: "إعدادات المتجر",
+    en: "Store Settings",
+  },
+  notifications: {
+    ar: "الإشعارات",
+    en: "Notifications",
+  },
+  productExpiringSoon: {
+    ar: "منتج على وشك انتهاء الصلاحية",
+    en: "Product Expiring Soon",
+  },
+  productExpiringDescription: {
+    ar: "لديك منتج سينتهي خلال 24 ساعة. تحقق منه الآن!",
+    en: "You have a product expiring within 24 hours. Check it now!",
+  },
+  orderReady: {
+    ar: "طلبك جاهز",
+    en: "Your Order is Ready",
+  },
+  orderReadyDescription: {
+    ar: "طلبك جاهز للاستلام من المتجر",
+    en: "Your order is ready for pickup from the store",
+  },
+  hoursAgo: {
+    ar: "ساعات مضت",
+    en: "hours ago",
+  },
+  viewAllNotifications: {
+    ar: "عرض جميع الإشعارات",
+    en: "View All Notifications",
+  },
+  account: {
+    ar: "الحساب",
+    en: "Account",
+  },
+  processing: {
+    ar: "قيد المعالجة",
+    en: "Processing",
+  },
+  cancelled: {
+    ar: "ملغي",
+    en: "Cancelled",
+  },
+  productViews: {
+    ar: "مشاهدات المنتج",
+    en: "Product Views",
+  },
+  productSaves: {
+    ar: "حفظ المنتج",
+    en: "Product Saves",
+  },
+  completedOrders: {
+    ar: "الطلبات المكتملة",
+    en: "Completed Orders",
+  },
+  totalRevenue: {
+    ar: "إجمالي الإيرادات",
+    en: "Total Revenue",
+  },
+  achievements: {
+    ar: "الإنجازات",
+    en: "Achievements",
+  },
+  ecoImpact: {
+    ar: "التأثير البيئي",
+    en: "Eco Impact",
+  },
+  personalInfo: {
+    ar: "المعلومات الشخصية",
+    en: "Personal Information",
+  },
+  accountSettings: {
+    ar: "إعدادات الحساب",
+    en: "Account Settings",
+  },
+  notificationsSettings: {
+    ar: "إعدادات الإشعارات",
+    en: "Notification Settings",
+  },
+  privacySettings: {
+    ar: "إعدادات الخصوصية",
+    en: "Privacy Settings",
+  },
+  deleteAccount: {
+    ar: "حذف الحساب",
+    en: "Delete Account",
+  },
+  deleteAccountWarning: {
+    ar: "هذا الإجراء لا يمكن التراجع عنه. سيؤدي إلى حذف حسابك وجميع بياناتك نهائيًا.",
+    en: "This action cannot be undone. It will permanently delete your account and all your data.",
+  },
+  confirmDelete: {
+    ar: "تأكيد الحذف",
+    en: "Confirm Delete",
+  },
+  cancel: {
+    ar: "إلغاء",
+    en: "Cancel",
   },
 }
 

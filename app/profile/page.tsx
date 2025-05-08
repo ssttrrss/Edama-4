@@ -39,6 +39,16 @@ import {
   MapPin,
   Search,
   Trash2,
+  DollarSign,
+  BarChart,
+  TrendingUp,
+  Settings,
+  Package,
+  Sparkles,
+  Eye,
+  Store,
+  LightbulbIcon,
+  User,
 } from "lucide-react"
 
 // Sample reviews data
@@ -275,6 +285,7 @@ export default function ProfilePage() {
   const [favorites, setFavorites] = useState<any[]>([])
   const [filteredFavorites, setFilteredFavorites] = useState<any[]>([])
   const [favoriteStores, setFavoriteStores] = useState(sampleFavoriteStores)
+  const [filteredFavoriteStores, setFilteredFavoriteStores] = useState(sampleFavoriteStores)
   const [reviews] = useState(sampleReviews)
   const [uploadedProducts, setUploadedProducts] = useState(sampleUploadedProducts)
   const [editedUser, setEditedUser] = useState<any>({})
@@ -308,6 +319,9 @@ export default function ProfilePage() {
   const [productFilter, setProductFilter] = useState("all")
   const [productSort, setProductSort] = useState("newest")
   const [searchQuery, setSearchQuery] = useState("")
+  const [storeSearchQuery, setStoreSearchQuery] = useState("")
+  const [activeSection, setActiveSection] = useState<string | null>(null)
+  const [showFilterOptions, setShowFilterOptions] = useState(false)
 
   // Format date - moved outside useEffect to avoid recreation on each render
   const formatDate = useCallback(
@@ -412,10 +426,28 @@ export default function ProfilePage() {
     setFilteredFavorites(filtered)
   }, [searchQuery, favorites])
 
+  // Filter favorite stores based on search query
+  useEffect(() => {
+    if (storeSearchQuery.trim() === "") {
+      setFilteredFavoriteStores(favoriteStores)
+      return
+    }
+
+    const filtered = favoriteStores.filter(
+      (store) =>
+        (store.name && store.name.toLowerCase().includes(storeSearchQuery.toLowerCase())) ||
+        (store.nameAr && store.nameAr.toLowerCase().includes(storeSearchQuery.toLowerCase())) ||
+        (store.location && store.location.toLowerCase().includes(storeSearchQuery.toLowerCase())) ||
+        (store.locationAr && store.locationAr.toLowerCase().includes(storeSearchQuery.toLowerCase())),
+    )
+
+    setFilteredFavoriteStores(filtered)
+  }, [storeSearchQuery, favoriteStores])
+
   // Handle logout
   const handleLogout = () => {
     logout()
-    router.push("/login")
+    router.push("/")
   }
 
   // Handle save profile
@@ -474,6 +506,7 @@ export default function ProfilePage() {
   const handleRemoveFavoriteStore = (id: number) => {
     const updatedStores = favoriteStores.filter((store) => store.id !== id)
     setFavoriteStores(updatedStores)
+    setFilteredFavoriteStores(updatedStores)
 
     toast({
       title: t("storeRemoved"),
@@ -598,6 +631,15 @@ export default function ProfilePage() {
     }
   }
 
+  // Toggle section expansion
+  const toggleSection = (section: string) => {
+    if (activeSection === section) {
+      setActiveSection(null)
+    } else {
+      setActiveSection(section)
+    }
+  }
+
   // Get order status badge
   const getOrderStatusBadge = (status: string) => {
     switch (status) {
@@ -706,8 +748,19 @@ export default function ProfilePage() {
     return (
       <div className="container mx-auto flex min-h-[60vh] items-center justify-center px-4 py-8">
         <div className="text-center">
-          <div className="mb-4 h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-          <p>Loading...</p>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mb-4 h-16 w-16 animate-spin rounded-full border-4 border-primary border-t-transparent"
+          ></motion.div>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            Loading...
+          </motion.p>
         </div>
       </div>
     )
@@ -725,20 +778,23 @@ export default function ProfilePage() {
   // Get tabs based on user role
   const getTabs = () => {
     const commonTabs = [
-      { value: "overview", label: t("overview") },
-      { value: "orders", label: t("myOrders") },
-      { value: "favorites", label: t("favorites") },
-      { value: "reviews", label: t("reviews") },
-      { value: "settings", label: t("settings") },
+      { value: "overview", label: t("overview"), icon: <BarChart className="h-4 w-4" /> },
+      { value: "orders", label: t("myOrders"), icon: <Package className="h-4 w-4" /> },
+      { value: "favorites", label: t("favorites"), icon: <Heart className="h-4 w-4" /> },
+      { value: "reviews", label: t("reviews"), icon: <Star className="h-4 w-4" /> },
+      { value: "settings", label: t("settings"), icon: <Settings className="h-4 w-4" /> },
     ]
 
-    const buyerTabs = [...commonTabs, { value: "savedStores", label: t("savedStores") }]
+    const buyerTabs = [
+      ...commonTabs,
+      { value: "savedStores", label: t("savedStores"), icon: <Store className="h-4 w-4" /> },
+    ]
 
     const sellerTabs = [
       ...commonTabs,
-      { value: "products", label: t("myProducts") },
-      { value: "analytics", label: t("analytics") },
-      { value: "storeSettings", label: t("storeSettings") },
+      { value: "products", label: t("myProducts"), icon: <ShoppingBag className="h-4 w-4" /> },
+      { value: "analytics", label: t("analytics"), icon: <TrendingUp className="h-4 w-4" /> },
+      { value: "storeSettings", label: t("storeSettings"), icon: <Store className="h-4 w-4" /> },
     ]
 
     return accountType === "seller" ? sellerTabs : buyerTabs
@@ -767,13 +823,35 @@ export default function ProfilePage() {
     },
   }
 
+  const fadeIn = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { duration: 0.5 },
+    },
+  }
+
+  const slideIn = {
+    hidden: { x: -20, opacity: 0 },
+    visible: {
+      x: 0,
+      opacity: 1,
+      transition: { duration: 0.5 },
+    },
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="relative"
+        >
+          <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-500">
             {/* Cover Image */}
-            <div className="relative h-48 w-full bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20">
+            <div className="relative h-56 w-full bg-gradient-to-r from-primary/20 via-primary/30 to-primary/20">
               {accountType === "seller" && (
                 <div className="absolute inset-0">
                   <Image
@@ -784,17 +862,22 @@ export default function ProfilePage() {
                   />
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-              <div className="absolute bottom-0 left-0 right-0 top-0 flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.2 }}
+                className="absolute bottom-0 left-0 right-0 top-0 flex items-center justify-center"
+              >
                 <div className="text-center">
-                  <h1 className="text-3xl font-bold text-white md:text-4xl">
+                  <h1 className="text-3xl font-bold text-white md:text-4xl drop-shadow-md">
                     {accountType === "seller"
                       ? language === "ar"
                         ? userData.storeNameAr
                         : userData.storeName
                       : t("welcomeBack")}
                   </h1>
-                  <p className="mt-2 text-white/80">
+                  <p className="mt-2 text-white/90 max-w-2xl mx-auto drop-shadow-md">
                     {accountType === "seller"
                       ? language === "ar"
                         ? userData.storeDescriptionAr
@@ -802,18 +885,23 @@ export default function ProfilePage() {
                       : t("profileDashboardDescription")}
                   </p>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             {/* Profile Info */}
-            <div className="relative mx-auto -mt-16 flex w-full max-w-5xl flex-col items-center px-4 md:flex-row md:items-end md:px-8">
-              <div className="relative mb-4 md:mb-0">
-                <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
+            <div className="relative mx-auto -mt-20 flex w-full max-w-5xl flex-col items-center px-4 md:flex-row md:items-end md:px-8">
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="relative mb-4 md:mb-0"
+              >
+                <Avatar className="h-36 w-36 border-4 border-background shadow-xl">
                   <AvatarImage
                     src={previewImage || (accountType === "seller" ? userData.storeLogo : userData.avatar)}
                     alt={userData.name}
                   />
-                  <AvatarFallback className="text-4xl">
+                  <AvatarFallback className="text-4xl bg-gradient-to-br from-primary to-primary/70 text-white">
                     {accountType === "seller" ? userData.storeName?.charAt(0) || "S" : userData.name?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
@@ -834,11 +922,19 @@ export default function ProfilePage() {
                     />
                   </Button>
                 )}
-              </div>
-              <div className="mb-4 flex flex-1 flex-col items-center text-center md:items-start md:pl-6 md:text-left">
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="mb-4 flex flex-1 flex-col items-center text-center md:items-start md:pl-6 md:text-left"
+              >
                 <div className="flex items-center gap-2">
                   <h2 className="text-2xl font-bold">{userData.name}</h2>
-                  <Badge variant={accountType === "seller" ? "secondary" : "outline"} className="ml-2">
+                  <Badge
+                    variant={accountType === "seller" ? "secondary" : "outline"}
+                    className="ml-2 animate-pulse-slow"
+                  >
                     {accountType === "seller" ? t("seller") : t("buyer")}
                   </Badge>
                 </div>
@@ -858,16 +954,21 @@ export default function ProfilePage() {
                     </Badge>
                   </div>
                 )}
-              </div>
-              <div className="flex flex-wrap justify-center gap-2 md:justify-end">
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                className="flex flex-wrap justify-center gap-2 md:justify-end"
+              >
                 {!isEditing ? (
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setIsEditing(true)}
-                    className="hover:bg-primary/10 transition-colors duration-300"
+                    className="hover:bg-primary/10 transition-all duration-300 group"
                   >
-                    <Edit className="mr-2 h-4 w-4" />
+                    <Edit className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform duration-300" />
                     {t("editProfile")}
                   </Button>
                 ) : (
@@ -876,7 +977,7 @@ export default function ProfilePage() {
                     size="sm"
                     onClick={handleSaveProfile}
                     disabled={isLoading}
-                    className="hover:scale-105 transition-transform duration-300"
+                    className="hover:scale-105 transition-transform duration-300 shadow-sm hover:shadow"
                   >
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     {t("saveChanges")}
@@ -891,20 +992,23 @@ export default function ProfilePage() {
                   <LogOut className="h-4 w-4" />
                   {t("logout")}
                 </Button>
-              </div>
+              </motion.div>
             </div>
 
             {/* Tabs */}
-            <CardContent className="px-4 pb-0 pt-4 md:px-8">
+            <CardContent className="px-4 pb-0 pt-8 md:px-8">
               <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 md:grid-cols-6">
+                <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 bg-muted/50 p-1 rounded-xl">
                   {getTabs().map((tab) => (
                     <TabsTrigger
                       key={tab.value}
                       value={tab.value}
-                      className="transition-colors duration-300 hover:bg-primary/10"
+                      className="transition-all duration-300 hover:bg-primary/10 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-lg"
                     >
-                      {tab.label}
+                      <span className="flex items-center gap-2">
+                        {tab.icon}
+                        <span>{tab.label}</span>
+                      </span>
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -915,6 +1019,363 @@ export default function ProfilePage() {
       </div>
 
       <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+        <TabsContent value="overview">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Profile Completion */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="lg:col-span-3"
+            >
+              <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300">
+                <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-primary/10">
+                  <CardTitle className="flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    {t("profileCompletion")}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{profileCompletion}%</span>
+                      <span className="flex items-center gap-1 text-sm">
+                        {getMoodIcon(profileCompletion)}
+                        {profileCompletion < 80 ? t("almostThere") : t("excellent")}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${profileCompletion}%` }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                        className="h-full bg-gradient-to-r from-primary to-accent"
+                      ></motion.div>
+                    </div>
+
+                    {profileCompletion < 100 && showTips && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.7 }}
+                        className="mt-4 rounded-lg bg-muted/50 p-4 border border-muted"
+                      >
+                        <div className="mb-2 flex items-center justify-between">
+                          <h4 className="flex items-center gap-2 font-medium">
+                            <LightbulbIcon className="h-4 w-4 text-yellow-500" />
+                            {t("completionTips")}
+                          </h4>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowTips(false)}
+                            className="hover:bg-muted transition-colors duration-300"
+                          >
+                            {t("dismiss")}
+                          </Button>
+                        </div>
+                        <ul className="ml-6 list-disc space-y-1 text-sm text-muted-foreground">
+                          {profileCompletion < 85 && <li>{t("addProfilePicture")}</li>}
+                          {profileCompletion < 90 && <li>{t("completeContactInfo")}</li>}
+                          {profileCompletion < 95 && <li>{t("writeBio")}</li>}
+                          {profileCompletion < 100 && <li>{t("leaveReview")}</li>}
+                        </ul>
+                      </motion.div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Role-specific Dashboard Cards */}
+            {accountType === "buyer" ? (
+              // Buyer Dashboard Cards
+              <>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <CardContent className="p-0">
+                      <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-green-800 dark:text-green-400">{t("foodSaved")}</p>
+                            <h3 className="mt-1 text-2xl font-bold text-green-900 dark:text-green-300">
+                              <motion.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 1, delay: 0.3 }}
+                              >
+                                {ecoStats.foodSaved} kg
+                              </motion.span>
+                            </h3>
+                          </div>
+                          <div className="rounded-full bg-green-200 p-3 dark:bg-green-800/30">
+                            <Leaf className="h-6 w-6 text-green-700 dark:text-green-400" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 text-sm text-muted-foreground">
+                        <div className="flex items-center justify-between">
+                          <span>{t("thisMonth")}</span>
+                          <span className="font-medium text-green-600 dark:text-green-400">+12%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <CardContent className="p-0">
+                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-blue-800 dark:text-blue-400">{t("co2Reduced")}</p>
+                            <h3 className="mt-1 text-2xl font-bold text-blue-900 dark:text-blue-300">
+                              <motion.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 1, delay: 0.4 }}
+                              >
+                                {ecoStats.co2Reduced} kg
+                              </motion.span>
+                            </h3>
+                          </div>
+                          <div className="rounded-full bg-blue-200 p-3 dark:bg-blue-800/30">
+                            <Recycle className="h-6 w-6 text-blue-700 dark:text-blue-400" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 text-sm text-muted-foreground">
+                        <div className="flex items-center justify-between">
+                          <span>{t("thisMonth")}</span>
+                          <span className="font-medium text-blue-600 dark:text-blue-400">+8%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                  <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <CardContent className="p-0">
+                      <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-amber-800 dark:text-amber-400">{t("moneySaved")}</p>
+                            <h3 className="mt-1 text-2xl font-bold text-amber-900 dark:text-amber-300">
+                              <motion.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 1, delay: 0.5 }}
+                              >
+                                {ecoStats.moneySaved} {t("currency")}
+                              </motion.span>
+                            </h3>
+                          </div>
+                          <div className="rounded-full bg-amber-200 p-3 dark:bg-amber-800/30">
+                            <DollarSign className="h-6 w-6 text-amber-700 dark:text-amber-400" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 text-sm text-muted-foreground">
+                        <div className="flex items-center justify-between">
+                          <span>{t("thisMonth")}</span>
+                          <span className="font-medium text-amber-600 dark:text-amber-400">+15%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </>
+            ) : (
+              // Seller Dashboard Cards
+              <>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <CardContent className="p-0">
+                      <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-indigo-800 dark:text-indigo-400">
+                              {t("productViews")}
+                            </p>
+                            <h3 className="mt-1 text-2xl font-bold text-indigo-900 dark:text-indigo-300">
+                              <motion.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 1, delay: 0.3 }}
+                              >
+                                {analytics.views}
+                              </motion.span>
+                            </h3>
+                          </div>
+                          <div className="rounded-full bg-indigo-200 p-3 dark:bg-indigo-800/30">
+                            <Eye className="h-6 w-6 text-indigo-700 dark:text-indigo-400" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 text-sm text-muted-foreground">
+                        <div className="flex items-center justify-between">
+                          <span>{t("thisMonth")}</span>
+                          <span className="font-medium text-indigo-600 dark:text-indigo-400">+22%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                >
+                  <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <CardContent className="p-0">
+                      <div className="bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20 p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-pink-800 dark:text-pink-400">
+                              {t("completedOrders")}
+                            </p>
+                            <h3 className="mt-1 text-2xl font-bold text-pink-900 dark:text-pink-300">
+                              <motion.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 1, delay: 0.4 }}
+                              >
+                                {analytics.orders}
+                              </motion.span>
+                            </h3>
+                          </div>
+                          <div className="rounded-full bg-pink-200 p-3 dark:bg-pink-800/30">
+                            <Package className="h-6 w-6 text-pink-700 dark:text-pink-400" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 text-sm text-muted-foreground">
+                        <div className="flex items-center justify-between">
+                          <span>{t("thisMonth")}</span>
+                          <span className="font-medium text-pink-600 dark:text-pink-400">+18%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.4 }}
+                >
+                  <Card className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <CardContent className="p-0">
+                      <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 p-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-emerald-800 dark:text-emerald-400">
+                              {t("totalRevenue")}
+                            </p>
+                            <h3 className="mt-1 text-2xl font-bold text-emerald-900 dark:text-emerald-300">
+                              <motion.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 1, delay: 0.5 }}
+                              >
+                                {analytics.revenue} {t("currency")}
+                              </motion.span>
+                            </h3>
+                          </div>
+                          <div className="rounded-full bg-emerald-200 p-3 dark:bg-emerald-800/30">
+                            <DollarSign className="h-6 w-6 text-emerald-700 dark:text-emerald-400" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 text-sm text-muted-foreground">
+                        <div className="flex items-center justify-between">
+                          <span>{t("thisMonth")}</span>
+                          <span className="font-medium text-emerald-600 dark:text-emerald-400">+25%</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </>
+            )}
+          </div>
+
+          {/* Achievements Section */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="mt-8"
+          >
+            <Card className="shadow-md hover:shadow-lg transition-all duration-300">
+              <CardHeader className="bg-gradient-to-r from-accent/5 to-accent/10">
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5 text-accent" />
+                  {t("achievements")}
+                </CardTitle>
+                <CardDescription>{t("yourAchievements")}</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                  {badges.map((badge) => (
+                    <motion.div
+                      key={badge.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.5, delay: 0.1 * badge.id }}
+                      whileHover={{ scale: 1.03 }}
+                      className={`rounded-lg border p-4 transition-all duration-300 cursor-pointer ${
+                        badge.unlocked
+                          ? "bg-gradient-to-br from-white to-secondary/20 dark:from-secondary/5 dark:to-secondary/20"
+                          : "bg-muted/30 opacity-70"
+                      }`}
+                      onClick={() => toggleBadgeExpansion(badge.id)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`rounded-full p-3 ${badge.unlocked ? "bg-secondary/30" : "bg-muted"}`}>
+                          {badge.icon}
+                        </div>
+                        <div>
+                          <h4 className="font-medium">
+                            {language === "ar" ? badge.nameAr : badge.name}
+                            {badge.unlocked && (
+                              <span className="ml-2 inline-flex">
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              </span>
+                            )}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            {language === "ar" ? badge.descriptionAr : badge.description}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+
         <TabsContent value="favorites">
           <Card className="hover-glow transition-shadow duration-300">
             <CardHeader>
@@ -936,7 +1397,12 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               {filteredFavorites.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="flex flex-col items-center justify-center py-8 text-center"
+                >
                   <div className="mb-4 rounded-full bg-muted p-3">
                     <Heart className="h-8 w-8 text-muted-foreground" />
                   </div>
@@ -955,7 +1421,7 @@ export default function ProfilePage() {
                   >
                     {t("exploreProducts")}
                   </Button>
-                </div>
+                </motion.div>
               ) : (
                 <motion.div
                   variants={staggerContainer}
@@ -963,7 +1429,7 @@ export default function ProfilePage() {
                   animate="visible"
                   className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
                 >
-                  {filteredFavorites.map((item, index) => (
+                  {filteredFavorites.map((item) => (
                     <motion.div key={item.id} variants={fadeInUp} className="product-card">
                       <Card className="overflow-hidden h-full flex flex-col">
                         <div className="relative">
@@ -1020,8 +1486,187 @@ export default function ProfilePage() {
           </Card>
         </TabsContent>
 
-        {/* Other tab contents */}
-        {/* ... */}
+        <TabsContent value="savedStores">
+          <Card className="hover-glow transition-shadow duration-300">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle>{t("savedStores")}</CardTitle>
+                  <CardDescription>{t("savedStoresDescription")}</CardDescription>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder={t("searchStores")}
+                    className="w-full max-w-xs pl-9 shadow-sm hover:shadow transition-shadow duration-300"
+                    value={storeSearchQuery}
+                    onChange={(e) => setStoreSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {filteredFavoriteStores.length === 0 ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="flex flex-col items-center justify-center py-8 text-center"
+                >
+                  <div className="mb-4 rounded-full bg-muted p-3">
+                    <Store className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="mb-2 text-lg font-medium">
+                    {storeSearchQuery ? t("noMatchingStores") : t("noSavedStores")}
+                  </h3>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    {storeSearchQuery ? t("tryDifferentSearch") : t("noSavedStoresDescription")}
+                  </p>
+                  <Button
+                    onClick={() => {
+                      setStoreSearchQuery("")
+                      router.push("/home")
+                    }}
+                    className="hover:scale-105 transition-transform duration-300"
+                  >
+                    {t("exploreStores")}
+                  </Button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  variants={staggerContainer}
+                  initial="hidden"
+                  animate="visible"
+                  className="grid gap-4 sm:grid-cols-2 md:grid-cols-3"
+                >
+                  {filteredFavoriteStores.map((store) => (
+                    <motion.div key={store.id} variants={fadeInUp}>
+                      <Card className="overflow-hidden hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+                        <div className="flex items-start p-4">
+                          <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg">
+                            <Image
+                              src={store.image || "/placeholder.svg"}
+                              alt={language === "ar" ? store.nameAr : store.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="ml-4 flex-1">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="font-medium">{language === "ar" ? store.nameAr : store.name}</h3>
+                                <p className="text-xs text-muted-foreground">
+                                  {language === "ar" ? store.locationAr : store.location}
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors duration-300"
+                                onClick={() => handleRemoveFavoriteStore(store.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between">
+                              <div className="flex items-center">
+                                {renderStarRating(store.rating)}
+                                <span className="ml-1 text-xs">{store.rating}</span>
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {store.productsCount} {t("products")}
+                              </span>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-3 w-full hover:bg-primary/10 transition-colors duration-300"
+                              onClick={() => router.push(`/store/${store.id}`)}
+                            >
+                              {t("viewStore")}
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="settings">
+          <Card className="hover-glow transition-shadow duration-300">
+            <CardHeader>
+              <CardTitle>{t("settings")}</CardTitle>
+              <CardDescription>{t("settingsDescription")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium flex items-center gap-2">
+                    <User className="h-5 w-5 text-primary" />
+                    {t("personalInfo")}
+                  </h3>
+                  <div className="mt-4 space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">{t("fullName")}</label>
+                        <Input
+                          value={editedUser.name || ""}
+                          onChange={(e) => setEditedUser({ ...editedUser, name: e.target.value })}
+                          className="shadow-sm hover:shadow transition-shadow duration-300"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">{t("email")}</label>
+                        <Input
+                          value={editedUser.email || ""}
+                          onChange={(e) => setEditedUser({ ...editedUser, email: e.target.value })}
+                          className="shadow-sm hover:shadow transition-shadow duration-300"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">{t("phone")}</label>
+                        <Input
+                          value={editedUser.phone || ""}
+                          onChange={(e) => setEditedUser({ ...editedUser, phone: e.target.value })}
+                          className="shadow-sm hover:shadow transition-shadow duration-300"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">{t("address")}</label>
+                        <Input
+                          value={editedUser.address || ""}
+                          onChange={(e) => setEditedUser({ ...editedUser, address: e.target.value })}
+                          className="shadow-sm hover:shadow transition-shadow duration-300"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <h3 className="text-lg font-medium flex items-center gap-2 text-destructive">
+                    <Trash2 className="h-5 w-5" />
+                    {t("deleteAccount")}
+                  </h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{t("deleteAccountWarning")}</p>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="mt-4 hover:bg-destructive/90 transition-colors duration-300"
+                  >
+                    {t("confirmDelete")}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   )
