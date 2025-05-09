@@ -9,7 +9,7 @@ import { useTheme } from "next-themes"
 import { useCart } from "@/components/cart-provider"
 import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -46,8 +46,9 @@ import {
   Bell,
   Home,
   Info,
-  Leaf,
+  HelpCircle,
   BarChart3,
+  Leaf,
 } from "lucide-react"
 import { useMobile } from "@/hooks/use-mobile"
 import { motion, AnimatePresence } from "framer-motion"
@@ -56,14 +57,34 @@ export default function Header() {
   const { t, language, setLanguage, dir } = useTranslation()
   const { setTheme, theme } = useTheme()
   const { itemCount } = useCart()
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, logout, isBuyer, isSeller } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
   const isMobile = useMobile()
   const [isScrolled, setIsScrolled] = useState(false)
   const [showContactOptions, setShowContactOptions] = useState(false)
+  const [notifications, setNotifications] = useState([
+    {
+      id: 1,
+      type: "expiry",
+      message: t("productExpiringSoon"),
+      description: t("productExpiringDescription"),
+      time: "2h",
+      read: false,
+      icon: <Leaf className="h-4 w-4 text-primary" />,
+    },
+    {
+      id: 2,
+      type: "order",
+      message: t("orderReady"),
+      description: t("orderReadyDescription"),
+      time: "5h",
+      read: false,
+      icon: <Package className="h-4 w-4 text-green-600 dark:text-green-400" />,
+    },
+  ])
 
-  // Handle scroll effect
+  // Handle scroll effect with enhanced animation
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10)
@@ -82,20 +103,33 @@ export default function Header() {
     setTheme(theme === "dark" ? "light" : "dark")
   }
 
-  // Handle logout
+  // Handle logout with confirmation
   const handleLogout = () => {
     logout()
-    router.push("/")
   }
+
+  // Handle notification mark as read
+  const handleNotificationClick = (id: number) => {
+    setNotifications((prev) =>
+      prev.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)),
+    )
+  }
+
+  // Mark all notifications as read
+  const markAllAsRead = () => {
+    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })))
+  }
+
+  // Count unread notifications
+  const unreadCount = notifications.filter((n) => !n.read).length
 
   // Handle contact options
-  const handleSendSMS = () => {
-    window.location.href = "sms:01274311482"
-    setShowContactOptions(false)
-  }
-
-  const handleSendEmail = () => {
-    window.location.href = "mailto:edama.team@gmail.com"
+  const handleContact = (method: "sms" | "email") => {
+    if (method === "sms") {
+      window.location.href = "sms:01274311482"
+    } else if (method === "email") {
+      window.location.href = "mailto:edama.team@gmail.com"
+    }
     setShowContactOptions(false)
   }
 
@@ -117,13 +151,35 @@ export default function Header() {
       { href: "/profile?tab=analytics", label: t("analytics"), icon: <BarChart3 className="h-4 w-4 mr-2" /> },
     ]
 
-    return user?.accountType === "seller" ? sellerItems : buyerItems
+    return isSeller ? sellerItems : buyerItems
+  }
+
+  // Account menu items based on user role
+  const getAccountMenuItems = () => {
+    const commonItems = [
+      { href: "/profile", label: t("profile"), icon: <User className="h-4 w-4 mr-2" /> },
+      { href: "/profile?tab=settings", label: t("settings"), icon: <Settings className="h-4 w-4 mr-2" /> },
+    ]
+
+    const buyerItems = [
+      ...commonItems,
+      { href: "/profile?tab=favorites", label: t("favorites"), icon: <Heart className="h-4 w-4 mr-2" /> },
+      { href: "/profile?tab=orders", label: t("orders"), icon: <Package className="h-4 w-4 mr-2" /> },
+    ]
+
+    const sellerItems = [
+      ...commonItems,
+      { href: "/profile?tab=products", label: t("myProducts"), icon: <Store className="h-4 w-4 mr-2" /> },
+      { href: "/profile?tab=analytics", label: t("analytics"), icon: <BarChart3 className="h-4 w-4 mr-2" /> },
+    ]
+
+    return isSeller ? sellerItems : buyerItems
   }
 
   return (
     <header
       className={`sticky top-0 z-50 w-full transition-all duration-500 ${
-        isScrolled ? "bg-background/95 backdrop-blur-md shadow-md" : "bg-background"
+        isScrolled ? "bg-background/95 backdrop-blur-md shadow-lg" : "bg-background"
       }`}
     >
       <div className="container mx-auto px-4">
@@ -143,7 +199,10 @@ export default function Header() {
                     <span className="sr-only">{t("menu")}</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side={dir === "rtl" ? "right" : "left"} className="flex flex-col">
+                <SheetContent
+                  side={dir === "rtl" ? "right" : "left"}
+                  className="flex flex-col bg-gradient-to-br from-background to-background/80 backdrop-blur-sm"
+                >
                   <div className="flex items-center gap-2 mb-6">
                     <div className="relative h-10 w-10 overflow-hidden rounded-full">
                       <Image
@@ -155,13 +214,15 @@ export default function Header() {
                       />
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-xl font-bold text-primary">Edama</span>
-                      <span className="text-xs text-muted-foreground">{t("sustainabilityPlatform")}</span>
+                      <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70">
+                        Edama
+                      </span>
+                      <span className="text-xs text-muted-foreground">{t("smartExpiryDiscounts")}</span>
                     </div>
                   </div>
 
                   {isAuthenticated && user && (
-                    <div className="mb-6 flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                    <div className="mb-6 flex items-center gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
                       <Avatar className="h-10 w-10 border-2 border-primary/20">
                         <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
                         <AvatarFallback>{user.name?.charAt(0) || "U"}</AvatarFallback>
@@ -175,72 +236,72 @@ export default function Header() {
 
                   <nav className="flex flex-col gap-1 flex-1">
                     {getNavigationItems().map((item) => (
-                      <SheetClose asChild key={item.href}>
-                        <Link
-                          href={item.href}
-                          className={`flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10 ${
-                            pathname === item.href ? "bg-primary/15 font-medium text-primary" : ""
-                          }`}
-                        >
-                          {item.icon}
-                          {item.label}
-                        </Link>
-                      </SheetClose>
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 
+                          hover:bg-primary/10 hover:translate-x-1 
+                          ${pathname === item.href ? "bg-primary/15 font-medium text-primary" : ""}`}
+                      >
+                        {item.icon}
+                        {item.label}
+                      </Link>
                     ))}
 
-                    <SheetClose asChild>
-                      <Link
-                        href="#"
-                        className="flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10"
-                        onClick={() => setShowContactOptions(!showContactOptions)}
+                    <div
+                      className="flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10 hover:translate-x-1 cursor-pointer"
+                      onClick={() => setShowContactOptions(!showContactOptions)}
+                    >
+                      <HelpCircle className="h-4 w-4 mr-2" />
+                      {t("contact")}
+                    </div>
+
+                    {showContactOptions && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="ml-6 space-y-2 overflow-hidden"
                       >
-                        <Mail className="h-4 w-4 mr-2" />
-                        {t("contact")}
-                      </Link>
-                    </SheetClose>
+                        <div
+                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10 cursor-pointer"
+                          onClick={() => handleContact("sms")}
+                        >
+                          <Phone className="h-4 w-4 text-primary" />
+                          <div>
+                            <div className="text-sm font-medium">{t("sendSMS")}</div>
+                            <p className="text-xs text-muted-foreground">01274311482</p>
+                          </div>
+                        </div>
+                        <div
+                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10 cursor-pointer"
+                          onClick={() => handleContact("email")}
+                        >
+                          <Mail className="h-4 w-4 text-primary" />
+                          <div>
+                            <div className="text-sm font-medium">{t("sendEmail")}</div>
+                            <p className="text-xs text-muted-foreground">edama.team@gmail.com</p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
                   </nav>
 
                   {isAuthenticated ? (
                     <div className="border-t border-border pt-4 mt-4 space-y-2">
-                      <SheetClose asChild>
+                      {getAccountMenuItems().map((item) => (
                         <Link
-                          href="/profile"
-                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10"
+                          key={item.href}
+                          href={item.href}
+                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10 hover:translate-x-1"
                         >
-                          <User className="h-4 w-4" />
-                          {t("profile")}
+                          {item.icon}
+                          {item.label}
                         </Link>
-                      </SheetClose>
-                      <SheetClose asChild>
-                        <Link
-                          href="/profile?tab=favorites"
-                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10"
-                        >
-                          <Heart className="h-4 w-4" />
-                          {t("favorites")}
-                        </Link>
-                      </SheetClose>
-                      <SheetClose asChild>
-                        <Link
-                          href="/profile?tab=orders"
-                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10"
-                        >
-                          <Package className="h-4 w-4" />
-                          {t("orders")}
-                        </Link>
-                      </SheetClose>
-                      <SheetClose asChild>
-                        <Link
-                          href="/profile?tab=settings"
-                          className="flex items-center gap-2 rounded-md px-3 py-2 transition-all duration-300 hover:bg-primary/10"
-                        >
-                          <Settings className="h-4 w-4" />
-                          {t("settings")}
-                        </Link>
-                      </SheetClose>
+                      ))}
                       <Button
                         variant="ghost"
-                        className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive transition-colors duration-300"
+                        className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive hover:translate-x-1 transition-all duration-300"
                         onClick={handleLogout}
                       >
                         <LogOut className="h-4 w-4 mr-2" />
@@ -249,23 +310,16 @@ export default function Header() {
                     </div>
                   ) : (
                     <div className="border-t border-border pt-4 mt-4 flex gap-2">
-                      <SheetClose asChild>
-                        <Link href="/login" className="flex-1">
-                          <Button
-                            variant="outline"
-                            className="w-full hover:bg-primary/10 transition-colors duration-300"
-                          >
-                            {t("login")}
-                          </Button>
-                        </Link>
-                      </SheetClose>
-                      <SheetClose asChild>
-                        <Link href="/signup" className="flex-1">
-                          <Button className="w-full hover:scale-105 transition-transform duration-300">
-                            {t("signup")}
-                          </Button>
-                        </Link>
-                      </SheetClose>
+                      <Link href="/login" className="flex-1">
+                        <Button variant="outline" className="w-full hover:bg-primary/10 transition-colors duration-300">
+                          {t("login")}
+                        </Button>
+                      </Link>
+                      <Link href="/signup" className="flex-1">
+                        <Button className="w-full bg-gradient-to-r from-primary to-primary/90 hover:scale-105 transition-transform duration-300">
+                          {t("signup")}
+                        </Button>
+                      </Link>
                     </div>
                   )}
 
@@ -295,7 +349,12 @@ export default function Header() {
 
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 group">
-              <div className="relative h-10 w-10 overflow-hidden rounded-full transition-transform duration-500 group-hover:scale-110">
+              <motion.div
+                initial={{ rotate: 0 }}
+                whileHover={{ rotate: 10 }}
+                transition={{ duration: 0.3 }}
+                className="relative h-10 w-10 overflow-hidden rounded-full shadow-md"
+              >
                 <Image
                   src="/placeholder.svg?height=40&width=40"
                   alt="Edama Logo"
@@ -304,14 +363,22 @@ export default function Header() {
                   className="object-cover"
                   priority
                 />
-              </div>
+              </motion.div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold text-primary transition-colors duration-300 group-hover:text-primary/80">
+                <motion.span
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70"
+                >
                   Edama
-                </span>
-                <span className="text-xs text-muted-foreground transition-opacity duration-300 group-hover:opacity-80">
-                  {t("sustainabilityPlatform")}
-                </span>
+                </motion.span>
+                <motion.span
+                  initial={{ opacity: 0.8 }}
+                  whileHover={{ opacity: 1 }}
+                  className="text-xs text-muted-foreground"
+                >
+                  {t("smartExpiryDiscounts")}
+                </motion.span>
               </div>
             </Link>
           </div>
@@ -323,7 +390,9 @@ export default function Header() {
                 {getNavigationItems().map((item) => (
                   <NavigationMenuItem key={item.href}>
                     <Link href={item.href} legacyBehavior passHref>
-                      <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                      <NavigationMenuLink
+                        className={`${navigationMenuTriggerStyle()} hover:bg-primary/10 transition-colors duration-300`}
+                      >
                         <span className={`flex items-center ${pathname === item.href ? "text-primary" : ""}`}>
                           {item.icon}
                           {item.label}
@@ -334,15 +403,15 @@ export default function Header() {
                 ))}
 
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger>
+                  <NavigationMenuTrigger className="hover:bg-primary/10 transition-colors duration-300">
                     <Mail className="h-4 w-4 mr-2" />
                     {t("contact")}
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <div className="grid gap-3 p-4 w-[200px]">
+                    <div className="grid gap-3 p-4 w-[240px] bg-white dark:bg-gray-950 rounded-md shadow-lg">
                       <div
                         className="flex items-center gap-2 rounded-md p-2 hover:bg-primary/10 cursor-pointer transition-colors duration-300"
-                        onClick={handleSendSMS}
+                        onClick={() => handleContact("sms")}
                       >
                         <Phone className="h-4 w-4 text-primary" />
                         <div>
@@ -352,7 +421,7 @@ export default function Header() {
                       </div>
                       <div
                         className="flex items-center gap-2 rounded-md p-2 hover:bg-primary/10 cursor-pointer transition-colors duration-300"
-                        onClick={handleSendEmail}
+                        onClick={() => handleContact("email")}
                       >
                         <Mail className="h-4 w-4 text-primary" />
                         <div>
@@ -404,46 +473,54 @@ export default function Header() {
                     className="relative text-muted-foreground transition-all duration-300 hover:scale-110 hover:text-primary"
                   >
                     <Bell className="h-5 w-5" />
-                    <motion.span
-                      initial={{ scale: 0.8, opacity: 0.5 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{
-                        repeat: Number.POSITIVE_INFINITY,
-                        repeatType: "reverse",
-                        duration: 1.5,
-                      }}
-                      className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary"
-                    ></motion.span>
+                    {unreadCount > 0 && (
+                      <motion.span
+                        initial={{ scale: 0.8, opacity: 0.5 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{
+                          repeat: Number.POSITIVE_INFINITY,
+                          repeatType: "reverse",
+                          duration: 1.5,
+                        }}
+                        className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-primary"
+                      ></motion.span>
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80">
-                  <DropdownMenuLabel>{t("notifications")}</DropdownMenuLabel>
+                  <div className="flex items-center justify-between p-2">
+                    <DropdownMenuLabel>{t("notifications")}</DropdownMenuLabel>
+                    <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs h-8">
+                      {t("markAllAsRead")}
+                    </Button>
+                  </div>
                   <DropdownMenuSeparator />
                   <div className="max-h-[300px] overflow-auto">
-                    <div className="p-3 hover:bg-primary/5 rounded-md transition-colors duration-300 cursor-pointer">
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-full bg-primary/10 p-2">
-                          <Leaf className="h-4 w-4 text-primary" />
+                    {notifications.length > 0 ? (
+                      notifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className={`p-3 hover:bg-primary/5 rounded-md transition-colors duration-300 cursor-pointer ${
+                            !notification.read ? "bg-primary/5 dark:bg-primary/10" : ""
+                          }`}
+                          onClick={() => handleNotificationClick(notification.id)}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="rounded-full bg-primary/10 p-2">{notification.icon}</div>
+                            <div>
+                              <p className="text-sm font-medium">{notification.message}</p>
+                              <p className="text-xs text-muted-foreground">{notification.description}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {notification.time} {t("ago")}
+                              </p>
+                            </div>
+                            {!notification.read && <div className="ml-auto h-2 w-2 rounded-full bg-primary"></div>}
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium">{t("productExpiringSoon")}</p>
-                          <p className="text-xs text-muted-foreground">{t("productExpiringDescription")}</p>
-                          <p className="text-xs text-muted-foreground mt-1">2 {t("hoursAgo")}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-3 hover:bg-primary/5 rounded-md transition-colors duration-300 cursor-pointer">
-                      <div className="flex items-start gap-3">
-                        <div className="rounded-full bg-green-100 p-2 dark:bg-green-900/20">
-                          <Package className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">{t("orderReady")}</p>
-                          <p className="text-xs text-muted-foreground">{t("orderReadyDescription")}</p>
-                          <p className="text-xs text-muted-foreground mt-1">5 {t("hoursAgo")}</p>
-                        </div>
-                      </div>
-                    </div>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-sm text-muted-foreground">{t("noNotifications")}</div>
+                    )}
                   </div>
                   <DropdownMenuSeparator />
                   <div className="p-2">
@@ -451,6 +528,7 @@ export default function Header() {
                       variant="ghost"
                       size="sm"
                       className="w-full justify-center hover:bg-primary/10 transition-colors duration-300"
+                      onClick={() => router.push("/notifications")}
                     >
                       {t("viewAllNotifications")}
                     </Button>
@@ -464,7 +542,7 @@ export default function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2 transition-all duration-300 hover:bg-primary/10">
-                    <Avatar className="h-6 w-6">
+                    <Avatar className="h-6 w-6 border border-primary/20">
                       <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name || "User"} />
                       <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
                     </Avatar>
@@ -478,30 +556,16 @@ export default function Header() {
                     <span className="text-xs font-normal text-muted-foreground">{user?.email}</span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile" className="cursor-pointer">
-                      <User className="mr-2 h-4 w-4" />
-                      <span>{t("profile")}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile?tab=favorites" className="cursor-pointer">
-                      <Heart className="mr-2 h-4 w-4" />
-                      <span>{t("favorites")}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile?tab=orders" className="cursor-pointer">
-                      <Package className="mr-2 h-4 w-4" />
-                      <span>{t("orders")}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile?tab=settings" className="cursor-pointer">
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>{t("settings")}</span>
-                    </Link>
-                  </DropdownMenuItem>
+
+                  {getAccountMenuItems().map((item) => (
+                    <DropdownMenuItem key={item.href} asChild>
+                      <Link href={item.href} className="cursor-pointer">
+                        {item.icon}
+                        <span>{item.label}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-destructive focus:bg-destructive/10 focus:text-destructive"
@@ -517,12 +581,19 @@ export default function Header() {
               !isAuthenticated && (
                 <div className="flex items-center gap-2">
                   <Link href="/login">
-                    <Button variant="ghost" size="sm" className="transition-all duration-300 hover:bg-primary/10">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="transition-all duration-300 hover:bg-primary/10 border-primary/20"
+                    >
                       {t("login")}
                     </Button>
                   </Link>
                   <Link href="/signup">
-                    <Button size="sm" className="transition-all duration-300 hover:scale-105 shadow-sm hover:shadow">
+                    <Button
+                      size="sm"
+                      className="transition-all duration-300 hover:scale-105 shadow-sm hover:shadow bg-gradient-to-r from-primary to-primary/90"
+                    >
                       {t("signup")}
                     </Button>
                   </Link>

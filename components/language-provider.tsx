@@ -873,3 +873,10 @@ export function useTranslation() {
   }
   return context
 }
+
+// Add the useLanguage export as an alias for useTranslation
+// Add this right after the useTranslation export function
+
+export function useLanguage() {
+  return useTranslation()
+}

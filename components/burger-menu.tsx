@@ -1,131 +1,224 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { useTranslation } from "@/components/language-provider"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, User, ShoppingCart, Heart, Package, LogOut, Phone, Mail } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
+import { usePathname } from "next/navigation"
+import { Menu, X, Home, Info, User, LogOut, Globe, Sun, Moon, ChevronDown, ChevronRight } from "lucide-react"
+import { useAuth } from "@/components/auth-provider"
+import { useLanguage } from "@/components/language-provider"
+import { useTheme } from "@/components/theme-provider"
+import { cn } from "@/lib/utils"
 
-export function BurgerMenu() {
-  const { t, dir } = useTranslation()
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [userData, setUserData] = useState<any>(null)
+interface BurgerMenuProps {
+  className?: string
+}
 
-  // Check if user is logged in
-  useState(() => {
-    const user = localStorage.getItem("edama-user")
-    if (user) {
-      try {
-        const parsedUser = JSON.parse(user)
-        setUserData(parsedUser)
-        setIsLoggedIn(true)
-      } catch (error) {
-        console.error("Failed to parse user data", error)
+export function BurgerMenu({ className }: BurgerMenuProps) {
+  const { user, logout, isLoading } = useAuth()
+  const { t, setLocale, locale, availableLocales } = useLanguage()
+  const { theme, setTheme } = useTheme()
+  const pathname = usePathname()
+
+  const [isOpen, setIsOpen] = useState(false)
+  const [showLanguages, setShowLanguages] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
       }
     }
-  })
 
-  // Handle logout
-  const handleLogout = () => {
-    localStorage.removeItem("edama-user")
-    setIsLoggedIn(false)
-    window.location.href = "/"
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+      document.body.style.overflow = "hidden"
+    } else {
+      document.body.style.overflow = ""
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+      document.body.style.overflow = ""
+    }
+  }, [isOpen])
+
+  // Close menu when route changes
+  useEffect(() => {
+    setIsOpen(false)
+  }, [pathname])
+
+  const toggleMenu = () => {
+    setIsOpen(!isOpen)
   }
 
+  const handleLogout = () => {
+    logout()
+    setIsOpen(false)
+  }
+
+  const toggleLanguages = () => {
+    setShowLanguages(!showLanguages)
+  }
+
+  const changeLanguage = (newLocale: string) => {
+    setLocale(newLocale)
+    setShowLanguages(false)
+  }
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark")
+  }
+
+  const menuItems = [
+    { href: "/home", label: t("home"), icon: Home },
+    { href: "/about", label: t("about"), icon: Info },
+    ...(user
+      ? [{ href: "/profile", label: t("profile"), icon: User }]
+      : [{ href: "/login", label: t("login"), icon: User }]),
+  ]
+
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="text-muted-foreground">
-          <Menu className="h-6 w-6" />
-          <span className="sr-only">{t("menu")}</span>
-        </Button>
-      </SheetTrigger>
-      <SheetContent side={dir === "rtl" ? "right" : "left"} className="flex flex-col">
-        <div className="flex-1 py-6">
-          {isLoggedIn && userData ? (
-            <div className="mb-6 flex items-center gap-3">
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={userData.avatar || "/placeholder.svg"} alt={userData.name} />
-                <AvatarFallback>{userData.name?.charAt(0) || "U"}</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="font-medium">{userData.name}</p>
-                <p className="text-sm text-muted-foreground">{userData.email}</p>
-              </div>
+    <div ref={menuRef} className={cn("relative z-50", className)}>
+      <button
+        onClick={toggleMenu}
+        className="rounded-full bg-white p-2 shadow-md transition-colors duration-300 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700"
+        aria-label={isOpen ? t("closeMenu") : t("openMenu")}
+      >
+        {isOpen ? (
+          <X className="h-6 w-6 text-gray-700 dark:text-gray-200" />
+        ) : (
+          <Menu className="h-6 w-6 text-gray-700 dark:text-gray-200" />
+        )}
+      </button>
+
+      <div
+        className={cn(
+          "fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300",
+          isOpen ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+      ></div>
+
+      <div
+        className={cn(
+          "fixed bottom-0 left-0 right-0 top-0 z-50 w-full max-w-xs bg-white p-6 shadow-xl transition-transform duration-300 ease-in-out dark:bg-gray-900",
+          isOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
+        <div className="flex h-full flex-col">
+          <div className="mb-6 flex items-center justify-between">
+            <Link
+              href="/home"
+              className="text-xl font-bold text-green-600 dark:text-green-400"
+              onClick={() => setIsOpen(false)}
+            >
+              Edama
+            </Link>
+            <button
+              onClick={toggleMenu}
+              className="rounded-full p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+              aria-label={t("closeMenu")}
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <nav className="mb-6 space-y-1">
+            {menuItems.map((item) => {
+              const Icon = item.icon
+              const isActive = pathname === item.href
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center rounded-lg px-4 py-3 text-sm font-medium transition-colors duration-200",
+                    isActive
+                      ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
+                      : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800",
+                  )}
+                >
+                  <Icon
+                    className={cn(
+                      "mr-3 h-5 w-5",
+                      isActive ? "text-green-600 dark:text-green-400" : "text-gray-500 dark:text-gray-400",
+                    )}
+                  />
+                  {item.label}
+                </Link>
+              )
+            })}
+          </nav>
+
+          <div className="space-y-4">
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700">
+              <button
+                onClick={toggleLanguages}
+                className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-sm font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+              >
+                <div className="flex items-center">
+                  <Globe className="mr-3 h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  {t("language")}
+                </div>
+                {showLanguages ? (
+                  <ChevronDown className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                )}
+              </button>
+
+              {showLanguages && (
+                <div className="border-t border-gray-200 px-2 py-2 dark:border-gray-700">
+                  {availableLocales.map((loc) => (
+                    <button
+                      key={loc}
+                      onClick={() => changeLanguage(loc)}
+                      className={cn(
+                        "flex w-full items-center rounded-md px-4 py-2 text-sm transition-colors duration-200",
+                        locale === loc
+                          ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
+                          : "text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800",
+                      )}
+                    >
+                      {loc.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="mb-6 flex gap-2">
-              <Link href="/login" className="flex-1">
-                <Button variant="outline" className="w-full">
-                  {t("login")}
-                </Button>
-              </Link>
-              <Link href="/signup" className="flex-1">
-                <Button className="w-full">{t("signup")}</Button>
-              </Link>
+
+            <button
+              onClick={toggleTheme}
+              className="flex w-full items-center rounded-lg px-4 py-3 text-sm font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              {theme === "dark" ? (
+                <>
+                  <Sun className="mr-3 h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  {t("lightMode")}
+                </>
+              ) : (
+                <>
+                  <Moon className="mr-3 h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  {t("darkMode")}
+                </>
+              )}
+            </button>
+          </div>
+
+          {user && (
+            <div className="mt-auto pt-6">
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center rounded-lg px-4 py-3 text-sm font-medium text-red-600 transition-colors duration-200 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+              >
+                <LogOut className="mr-3 h-5 w-5" />
+                {t("logout")}
+              </button>
             </div>
           )}
-
-          <Separator className="mb-6" />
-
-          <nav className="space-y-4">
-            <Link href="/profile" className="flex items-center gap-3 py-2 text-lg">
-              <User className="h-5 w-5" />
-              <span>{t("profile")}</span>
-            </Link>
-            <Link href="/cart" className="flex items-center gap-3 py-2 text-lg">
-              <ShoppingCart className="h-5 w-5" />
-              <span>{t("cart")}</span>
-            </Link>
-            <Link href="/profile?tab=favorites" className="flex items-center gap-3 py-2 text-lg">
-              <Heart className="h-5 w-5" />
-              <span>{t("favorites")}</span>
-            </Link>
-            <Link href="/profile?tab=orders" className="flex items-center gap-3 py-2 text-lg">
-              <Package className="h-5 w-5" />
-              <span>{t("orders")}</span>
-            </Link>
-          </nav>
         </div>
-
-        <div className="border-t border-border pt-4 mt-4">
-          <h3 className="mb-2 text-sm font-semibold">{t("contactUs")}</h3>
-          <div className="space-y-2">
-            <a
-              href="sms:01274311482"
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent"
-            >
-              <Phone className="h-4 w-4" />
-              {t("sendSMS")}
-            </a>
-            <a
-              href="mailto:edama.team@gmail.com"
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors hover:bg-accent"
-            >
-              <Mail className="h-4 w-4" />
-              {t("sendEmail")}
-            </a>
-            <div className="px-3 py-2 text-xs text-muted-foreground">
-              <p>{t("phone")}: 01274311482</p>
-              <p>{t("email")}: edama.team@gmail.com</p>
-            </div>
-          </div>
-        </div>
-
-        {isLoggedIn && (
-          <Button
-            variant="outline"
-            className="mt-auto gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-4 w-4" />
-            <span>{t("logout")}</span>
-          </Button>
-        )}
-      </SheetContent>
-    </Sheet>
+      </div>
+    </div>
   )
 }

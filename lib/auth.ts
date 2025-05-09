@@ -24,6 +24,13 @@ export interface User {
   storeWebsite?: string
   storeLogo?: string
   storeCoverImage?: string
+  // New fields for enhanced user experience
+  language?: "en" | "ar"
+  preferences?: {
+    notifications: boolean
+    emailAlerts: boolean
+    darkMode: boolean
+  }
 }
 
 // Sample users for testing
@@ -38,6 +45,11 @@ const sampleUsers: User[] = [
     address: "Cairo, Egypt",
     joinDate: new Date().toISOString(),
     bio: "Eco-conscious shopper passionate about reducing food waste.",
+    preferences: {
+      notifications: true,
+      emailAlerts: false,
+      darkMode: false,
+    },
   },
   {
     id: "2",
@@ -56,6 +68,11 @@ const sampleUsers: User[] = [
     storeLocationAr: "الإسكندرية، مصر",
     storePhone: "+20 123 456 7890",
     storeEmail: "store@example.com",
+    preferences: {
+      notifications: true,
+      emailAlerts: true,
+      darkMode: false,
+    },
   },
 ]
 
@@ -77,6 +94,12 @@ export const getUsers = (): User[] => {
   return storedUsers ? JSON.parse(storedUsers) : []
 }
 
+// Check if email exists
+export const checkEmailExists = (email: string): boolean => {
+  const users = getUsers()
+  return users.some((user) => user.email === email)
+}
+
 // Register a new user
 export const registerUser = (userData: Omit<User, "id" | "joinDate">): User => {
   const users = getUsers()
@@ -84,14 +107,19 @@ export const registerUser = (userData: Omit<User, "id" | "joinDate">): User => {
   // Check if email already exists
   const existingUser = users.find((user) => user.email === userData.email)
   if (existingUser) {
-    throw new Error("Email already registered")
+    throw new Error("email_exists")
   }
 
-  // Create new user
+  // Create new user with defaults
   const newUser: User = {
     ...userData,
     id: Date.now().toString(),
     joinDate: new Date().toISOString(),
+    preferences: {
+      notifications: true,
+      emailAlerts: false,
+      darkMode: false,
+    },
   }
 
   // Save to localStorage
@@ -107,12 +135,12 @@ export const loginUser = (email: string, password: string): User => {
   // Find user by email
   const user = users.find((user) => user.email === email)
   if (!user) {
-    throw new Error("User not found")
+    throw new Error("user_not_found")
   }
 
   // Check password
   if (user.password !== password) {
-    throw new Error("Invalid password")
+    throw new Error("invalid_password")
   }
 
   // Store current user in localStorage (simulating a session)
@@ -150,7 +178,7 @@ export const updateUserProfile = (userData: Partial<User>): Omit<User, "password
   const currentUser = getCurrentUser()
 
   if (!currentUser) {
-    throw new Error("No user logged in")
+    throw new Error("no_user_logged_in")
   }
 
   // Find and update user
@@ -169,4 +197,32 @@ export const updateUserProfile = (userData: Partial<User>): Omit<User, "password
   localStorage.setItem("edama-user", JSON.stringify(updatedUser))
 
   return updatedUser
+}
+
+// Update user preferences
+export const updateUserPreferences = (preferences: Partial<User["preferences"]>): void => {
+  const currentUser = getCurrentUser()
+  if (!currentUser) return
+
+  const updatedPreferences = {
+    ...currentUser.preferences,
+    ...preferences,
+  }
+
+  updateUserProfile({ preferences: updatedPreferences })
+}
+
+export const useAuth = () => {
+  return {
+    user: getCurrentUser(),
+    isAuthenticated: isLoggedIn(),
+    isLoading: false,
+    login: async () => {},
+    register: async () => {},
+    logout: () => {},
+    updateProfile: async () => {},
+    checkExistingEmail: () => false,
+    isBuyer: false,
+    isSeller: false,
+  }
 }

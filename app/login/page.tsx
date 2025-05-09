@@ -4,28 +4,31 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useTranslation } from "@/components/language-provider"
 import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Eye, EyeOff, ArrowLeft, ArrowRight, Loader2, AlertCircle } from "lucide-react"
+import { Eye, EyeOff, ArrowLeft, ArrowRight, Loader2, AlertCircle, Lock, Mail } from "lucide-react"
 import { motion } from "framer-motion"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
+import Image from "next/image"
 
 export default function LoginPage() {
   const { t, language } = useTranslation()
   const router = useRouter()
-  const { login, isAuthenticated } = useAuth()
+  const searchParams = useSearchParams()
+  const { login, isAuthenticated, checkExistingEmail } = useAuth()
   const { toast } = useToast()
-  const [email, setEmail] = useState("")
+  const [email, setEmail] = useState(searchParams.get("email") || "")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [emailExists, setEmailExists] = useState<boolean | null>(null)
 
   const BackArrow = language === "ar" ? ArrowRight : ArrowLeft
 
@@ -36,42 +39,88 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router])
 
+  // Check if email exists when changed
+  useEffect(() => {
+    if (email && email.includes("@")) {
+      const exists = checkExistingEmail(email)
+      setEmailExists(exists)
+    } else {
+      setEmailExists(null)
+    }
+  }, [email, checkExistingEmail])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
 
     try {
-      await login(email, password)
-      toast({
-        title: t("loginSuccess"),
-        description: t("welcomeBack"),
-      })
-      router.push("/home")
-    } catch (error: any) {
-      if (error.message === "User not found") {
-        setError(t("userNotFound"))
-      } else if (error.message === "Invalid password") {
-        setError(t("invalidPassword"))
-      } else {
-        setError(t("loginError"))
+      if (!emailExists) {
+        toast({
+          title: t("accountNotFound"),
+          description: t("redirectToSignup"),
+          action: (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/signup?email=${encodeURIComponent(email)}`)}
+            >
+              {t("signup")}
+            </Button>
+          ),
+        })
+        setIsLoading(false)
+        return
       }
-    } finally {
+
+      await login(email, password)
+    } catch (error: any) {
+      // Error handling is done in auth-provider
       setIsLoading(false)
     }
   }
 
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        delayChildren: 0.3,
+        staggerChildren: 0.2,
+      },
+    },
+  }
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+    },
+  }
+
   return (
-    <div className="container mx-auto flex min-h-[80vh] items-center justify-center px-4 py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
-        <Card className="border-border shadow-lg">
+    <div className="container mx-auto flex min-h-[calc(100vh-10rem)] items-center justify-center px-4 py-8">
+      <motion.div initial="hidden" animate="visible" variants={containerVariants} className="w-full max-w-md">
+        <Card className="backdrop-blur-sm border-border shadow-xl overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-bl-full -z-10" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-secondary/10 rounded-tr-full -z-10" />
+
+          <motion.div variants={itemVariants} className="flex justify-center pt-6">
+            <div className="w-20 h-20 relative">
+              <Image
+                src="/placeholder.svg?height=80&width=80"
+                alt="Edama Logo"
+                width={80}
+                height={80}
+                className="object-contain"
+              />
+            </div>
+          </motion.div>
+
           <CardHeader className="space-y-1">
-            <div className="mb-2 flex items-center">
+            <motion.div variants={itemVariants} className="mb-2 flex items-center">
               <Button
                 variant="ghost"
                 size="icon"
@@ -82,35 +131,51 @@ export default function LoginPage() {
                 <BackArrow className="h-4 w-4" />
               </Button>
               <CardTitle className="text-2xl font-bold">{t("loginTitle")}</CardTitle>
-            </div>
-            <CardDescription className="text-base">{t("loginDescription")}</CardDescription>
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <CardDescription className="text-base">{t("loginDescription")}</CardDescription>
+            </motion.div>
           </CardHeader>
+
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
               {error && (
-                <Alert variant="destructive" className="text-sm">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
+                <motion.div variants={itemVariants}>
+                  <Alert variant="destructive" className="text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                </motion.div>
               )}
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-base">
+
+              <motion.div variants={itemVariants} className="space-y-2">
+                <Label htmlFor="email" className="text-base flex gap-2 items-center">
+                  <Mail className="h-4 w-4" />
                   {t("email")}
                 </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder={t("emailPlaceholder")}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  dir="ltr"
-                  className="h-11"
-                />
-              </div>
-              <div className="space-y-2">
+                <div className="relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder={t("emailPlaceholder")}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    dir="ltr"
+                    className="h-11 pl-3 transition-all duration-300 border-primary/20 focus:border-primary"
+                  />
+                  {emailExists === false && email.length > 5 && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-orange-500">
+                      {t("newUser")}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+
+              <motion.div variants={itemVariants} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-base">
+                  <Label htmlFor="password" className="text-base flex gap-2 items-center">
+                    <Lock className="h-4 w-4" />
                     {t("password")}
                   </Label>
                   <Link href="/forgot-password" className="text-sm text-primary hover:underline">
@@ -126,7 +191,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     dir="ltr"
-                    className="h-11"
+                    className="h-11 transition-all duration-300 border-primary/20 focus:border-primary"
                   />
                   <Button
                     type="button"
@@ -139,25 +204,36 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
-              </div>
+              </motion.div>
             </CardContent>
+
             <CardFooter className="flex flex-col">
-              <Button type="submit" className="mb-4 w-full h-11 text-base" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t("loggingIn")}
-                  </>
-                ) : (
-                  t("login")
-                )}
-              </Button>
-              <p className="text-center text-base text-muted-foreground">
+              <motion.div variants={itemVariants} className="w-full">
+                <Button
+                  type="submit"
+                  className="mb-4 w-full h-11 text-base transition-all duration-300 hover:scale-[1.02] bg-gradient-to-r from-primary to-primary/90"
+                  disabled={isLoading || !email || !password}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {t("loggingIn")}
+                    </>
+                  ) : (
+                    t("login")
+                  )}
+                </Button>
+              </motion.div>
+
+              <motion.p variants={itemVariants} className="text-center text-base text-muted-foreground">
                 {t("dontHaveAccount")}{" "}
-                <Link href="/signup" className="text-primary font-medium hover:underline">
+                <Link
+                  href={email ? `/signup?email=${encodeURIComponent(email)}` : "/signup"}
+                  className="text-primary font-medium hover:underline"
+                >
                   {t("createAccount")}
                 </Link>
-              </p>
+              </motion.p>
             </CardFooter>
           </form>
         </Card>

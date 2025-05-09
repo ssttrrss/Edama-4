@@ -1,14 +1,14 @@
 "use client"
 
-import { AvatarFallback } from "@/components/ui/avatar"
-import { Avatar } from "@/components/ui/avatar"
 import type React from "react"
-import { useState, useEffect } from "react"
+
+import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
 import { useTranslation } from "@/components/language-provider"
 import { useCart } from "@/components/cart-provider"
+import { useAuth } from "@/components/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -38,17 +38,20 @@ import {
   Weight,
   Thermometer,
   AlertTriangle,
+  Check,
 } from "lucide-react"
-import { motion } from "framer-motion"
-
-// Import the CountdownTimer component
+import { motion, AnimatePresence } from "framer-motion"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { CountdownTimer } from "@/components/countdown-timer"
+import { useToast } from "@/components/ui/use-toast"
 
 export default function ProductPage() {
   const { id } = useParams()
   const router = useRouter()
   const { t, language, dir } = useTranslation()
   const { addItem } = useCart()
+  const { isAuthenticated } = useAuth()
+  const { toast } = useToast()
   const [quantity, setQuantity] = useState(1)
   const [product, setProduct] = useState<any>(null)
   const [similarProducts, setSimilarProducts] = useState<any[]>([])
@@ -57,6 +60,9 @@ export default function ProductPage() {
   const [activeTab, setActiveTab] = useState("description")
   const [isImageZoomed, setIsImageZoomed] = useState(false)
   const [zoomPosition, setZoomPosition] = useState({ x: 0, y: 0 })
+  const [selectedImage, setSelectedImage] = useState(0)
+  const [showAddedToCart, setShowAddedToCart] = useState(false)
+  const imageContainerRef = useRef<HTMLDivElement>(null)
 
   const BackArrow = language === "ar" ? ArrowRight : ArrowLeft
 
@@ -72,7 +78,16 @@ export default function ProductPage() {
     setTimeout(() => {
       const foundProduct = products.find((p) => p.id === Number(id))
       if (foundProduct) {
-        setProduct(foundProduct)
+        // Add multiple images for the product (for demo)
+        const productWithImages = {
+          ...foundProduct,
+          images: [
+            foundProduct.image,
+            "/placeholder.svg?height=600&width=600",
+            "/placeholder.svg?height=600&width=600",
+          ],
+        }
+        setProduct(productWithImages)
         // Find similar products (same category, excluding current product)
         const similar = products.filter((p) => p.category === foundProduct.category && p.id !== foundProduct.id)
         setSimilarProducts(similar.slice(0, 4)) // Limit to 4 similar products
@@ -106,7 +121,7 @@ export default function ProductPage() {
     setQuantity(quantity + 1)
   }
 
-  // Add to cart
+  // Add to cart with animation
   const handleAddToCart = () => {
     if (product) {
       addItem({
@@ -120,6 +135,30 @@ export default function ProductPage() {
         supermarket: product.supermarket,
         expiryDate: product.expiryDate,
       })
+
+      // Show added to cart animation
+      setShowAddedToCart(true)
+
+      // Notification
+      toast({
+        title: t("addedToCart"),
+        description: `${quantity} × ${language === "ar" ? product.nameAr : product.name}`,
+        action: (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => router.push("/cart")}
+            className="bg-primary hover:bg-primary/90"
+          >
+            {t("viewCart")}
+          </Button>
+        ),
+      })
+
+      // Hide animation after a delay
+      setTimeout(() => {
+        setShowAddedToCart(false)
+      }, 2000)
     }
   }
 
@@ -146,6 +185,25 @@ export default function ProductPage() {
 
   // Toggle favorite
   const toggleFavorite = () => {
+    if (!isAuthenticated) {
+      // Prompt to login if not authenticated
+      toast({
+        title: t("loginRequired"),
+        description: t("loginToSaveFavorites"),
+        action: (
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => router.push("/login")}
+            className="bg-primary hover:bg-primary/90"
+          >
+            {t("login")}
+          </Button>
+        ),
+      })
+      return
+    }
+
     setIsFavorite(!isFavorite)
 
     // Update localStorage
@@ -155,6 +213,11 @@ export default function ProductPage() {
       // Remove from favorites
       const updatedFavorites = savedFavorites.filter((item: any) => item.id !== product.id)
       localStorage.setItem("edama-favorites", JSON.stringify(updatedFavorites))
+
+      toast({
+        title: t("removedFromFavorites"),
+        description: language === "ar" ? product.nameAr : product.name,
+      })
     } else {
       // Add to favorites
       const favoriteItem = {
@@ -171,14 +234,41 @@ export default function ProductPage() {
       }
       savedFavorites.push(favoriteItem)
       localStorage.setItem("edama-favorites", JSON.stringify(savedFavorites))
+
+      toast({
+        title: t("addedToFavorites"),
+        description: language === "ar" ? product.nameAr : product.name,
+      })
+    }
+  }
+
+  // Share product
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: language === "ar" ? product.nameAr : product.name,
+          text: t("checkOutProduct"),
+          url: window.location.href,
+        })
+      } catch (error) {
+        console.error("Error sharing:", error)
+      }
+    } else {
+      // Fallback - copy to clipboard
+      navigator.clipboard.writeText(window.location.href)
+      toast({
+        title: t("linkCopied"),
+        description: t("linkCopiedDescription"),
+      })
     }
   }
 
   // Handle image zoom
   const handleImageMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isImageZoomed) return
+    if (!isImageZoomed || !imageContainerRef.current) return
 
-    const { left, top, width, height } = e.currentTarget.getBoundingClientRect()
+    const { left, top, width, height } = imageContainerRef.current.getBoundingClientRect()
     const x = ((e.clientX - left) / width) * 100
     const y = ((e.clientY - top) / height) * 100
 
@@ -201,7 +291,7 @@ export default function ProductPage() {
     const expiry = new Date(expiryDate)
     const diffTime = expiry.getTime() - today.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
+    return diffDays > 0 ? diffDays : 0
   }
 
   // Animation variants
@@ -291,19 +381,59 @@ export default function ProductPage() {
           transition={{ duration: 0.5 }}
           className="relative overflow-hidden rounded-lg border bg-background shadow-md hover:shadow-lg transition-shadow duration-300"
         >
-          <div
-            className="relative aspect-square overflow-hidden"
-            onMouseEnter={() => setIsImageZoomed(true)}
-            onMouseLeave={() => setIsImageZoomed(false)}
-            onMouseMove={handleImageMouseMove}
-          >
-            <Image
-              src={product.image || "/placeholder.svg"}
-              alt={language === "ar" ? product.nameAr : product.name}
-              fill
-              className={`object-cover transition-transform duration-300 ${isImageZoomed ? "scale-150" : ""}`}
-              style={isImageZoomed ? { transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%` } : {}}
-            />
+          <div className="relative">
+            <div className="relative aspect-square overflow-hidden">
+              <div
+                ref={imageContainerRef}
+                className="relative aspect-square overflow-hidden"
+                onMouseEnter={() => setIsImageZoomed(true)}
+                onMouseLeave={() => setIsImageZoomed(false)}
+                onMouseMove={handleImageMouseMove}
+              >
+                <Image
+                  src={product.images ? product.images[selectedImage] : "/placeholder.svg"}
+                  alt={language === "ar" ? product.nameAr : product.name}
+                  fill
+                  className={`object-cover transition-transform duration-300 ${isImageZoomed ? "scale-150" : ""}`}
+                  style={isImageZoomed ? { transformOrigin: `${zoomPosition.x}% ${zoomPosition.y}%` } : {}}
+                />
+              </div>
+              <AnimatePresence>
+                {showAddedToCart && (
+                  <motion.div
+                    className="absolute left-0 top-0 flex h-full w-full items-center justify-center bg-green-500/75 text-white"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="flex items-center gap-2 text-xl font-semibold">
+                      <Check className="h-6 w-6" />
+                      {t("added")}!
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            {product.images && product.images.length > 1 && (
+              <div className="mt-2 flex justify-center gap-2">
+                {product.images.map((image: string, index: number) => (
+                  <button
+                    key={index}
+                    className={`h-12 w-12 rounded-md border object-cover p-1 transition-all duration-200 hover:opacity-75 ${selectedImage === index ? "border-primary" : "border-transparent"}`}
+                    onClick={() => setSelectedImage(index)}
+                  >
+                    <Image
+                      src={image || "/placeholder.svg"}
+                      alt={`${language === "ar" ? product.nameAr : product.name} - ${index + 1}`}
+                      width={48}
+                      height={48}
+                      className="object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <Badge className="absolute right-4 top-4 bg-secondary flash">
             {product.discount}% {t("off")}
@@ -410,7 +540,12 @@ export default function ProductPage() {
               <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
               {isFavorite ? t("savedToFavorites") : t("saveToFavorites")}
             </Button>
-            <Button variant="outline" size="sm" className="gap-2 hover:bg-primary/10 transition-colors duration-300">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 hover:bg-primary/10 transition-colors duration-300"
+              onClick={handleShare}
+            >
               <Share2 className="h-5 w-5" />
               {t("share")}
             </Button>
